@@ -1,0 +1,5 @@
+do web site (html and css)
+
+what the site need to contain:
+
+figma link:https://www.figma.com/design/ksheNatUEkYqWgK1VBF2lr/Rain-Guessr?node-id=0-1&t=042JNWWmMrqtVzOi-1
