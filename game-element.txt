@@ -1,0 +1,14 @@
+need a map to point the answer (can make different type of map: game like, full 2D)
+have something that calcul points gain from answer (base on: correct region, correct room, distance)
+have a picture bank of player in random place (a lot for it to not repeat)
+a program that play the game (select a position, set a timer, and other parameter essential to a good game)
+have a menu to play the game and acces other menu:
+-setting : can change language, and other things (no idea for the moment)
+-account : register or login to your account to register your score
+
+that all my idea for now, I think it's already a lot of thing to make, 
+I will try my best to make all of this work.
+
+
+(I hope I can finish this project, I love Rain World, and I want to make something that other fan can enjoy
+playing. It's also an opportunity for me to exerce programming in multiple way)
