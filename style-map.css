@@ -1,4 +1,3 @@
-/* Réinitialiser les styles de base */
 html, body {
   margin: 0;
   width: 100%;
@@ -6,7 +5,6 @@ html, body {
   overflow: hidden; /* Désactive les barres de défilement globales */
 }
 
-/* Conteneur parent */
 #map-container {
   width: 100%;
   height: 100%;
@@ -18,12 +16,11 @@ html, body {
   align-items: center;
 }
 
-/* Carte interne */
 #map {
   background: url("../pictures/map/World_Map_(Vanilla).png") no-repeat center center;
-  background-size: contain; /* Ajuste l'image au conteneur */
-  width: 100%; /* Taille initiale (sera zoomée/dézoomée) */
+  background-size: contain;
+  width: 100%;
   height: 100%;
   transform-origin: center center; /* Centre le zoom */
-  transition: transform 0.2s ease-out; /* Animation fluide pour le zoom */
+  /*transition: transform 0.2s ease-out; /* Animation fluide pour le zoom */
 }

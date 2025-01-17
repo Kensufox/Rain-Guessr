@@ -1,56 +1,65 @@
 const container = document.getElementById('map-container');
 const map = document.getElementById('map');
 
-let isDragging = false;
-let startX, startY;
-let scrollLeft, scrollTop;
+let isDragging = false; // État du drag
+let startX = 0, startY = 0; // Position initiale de la souris au clic
+let currentX = 0, currentY = 0; // Décalage actuel de la carte
+let offsetX = 0, offsetY = 0; // Position finale accumulée après drag
+let scale = 1; // Facteur de zoom initial
 
-// Échelle initiale pour le zoom
-let scale = 1;
-
-// Zoom avec la molette
+// Gestion du zoom avec la molette
 container.addEventListener('wheel', (e) => {
-  e.preventDefault(); // Empêche le défilement classique
+  e.preventDefault(); // Empêche le comportement par défaut (scroll)
 
-  // Ajustement du facteur de zoom
+  // Définir l'intensité du zoom
   const zoomIntensity = 0.1;
   const delta = e.deltaY > 0 ? -zoomIntensity : zoomIntensity; // Zoom avant/arrière
-  scale = Math.min(Math.max(0.5, scale + delta), 3); // Limite le zoom entre 0.5x et 3x
+  scale = Math.min(Math.max(0.5, scale + delta), 3); // Limite le zoom entre 0.5 et 3
 
-  // Applique le zoom à l'image
-  map.style.transform = `scale(${scale})`;
+  // Appliquer le zoom tout en préservant la position actuelle
+  map.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
 });
 
 // Début du drag au clic gauche
 container.addEventListener('mousedown', (e) => {
   if (e.button !== 0) return; // Ne réagit qu'au clic gauche
   e.preventDefault(); // Empêche la sélection de texte
-  isDragging = true;
+  isDragging = true; // Active l'état de drag
   container.style.cursor = 'grabbing'; // Change le curseur
-  startX = e.pageX; // Position de la souris
-  startY = e.pageY;
-  scrollLeft = container.scrollLeft; // Position actuelle du scroll horizontal
-  scrollTop = container.scrollTop; // Position actuelle du scroll vertical
+
+  // Sauvegarde de la position initiale de la souris
+  startX = e.pageX - offsetX;
+  startY = e.pageY - offsetY;
 });
 
 // Déplacement pendant le drag
 container.addEventListener('mousemove', (e) => {
-  if (!isDragging) return;
-  const dx = startX - e.pageX; // Différence horizontale
-  const dy = startY - e.pageY; // Différence verticale
+  if (!isDragging) return; // Arrête si on ne drag pas
 
-  // Simule le défilement en transformant la position
-  map.style.transform = `translate(${-dx}px, ${-dy}px) scale(${scale})`;
+  // Calcul du déplacement
+  offsetX = e.pageX - startX;
+  offsetY = e.pageY - startY;
+
+  // Mise à jour de la position actuelle de la carte
+  currentX = offsetX;
+  currentY = offsetY;
+
+  // Appliquer la transformation
+  map.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
 });
 
-// Fin du drag
+// Fin du drag au relâchement du bouton de la souris
 container.addEventListener('mouseup', () => {
-  isDragging = false; // Désactive le drag
-  container.style.cursor = 'grab'; // Retour au curseur par défaut
+  if (isDragging) {
+    isDragging = false; // Désactive le drag
+    container.style.cursor = 'grab'; // Change le curseur
+  }
 });
 
 // Annuler le drag si la souris quitte le conteneur
 container.addEventListener('mouseleave', () => {
-  isDragging = false;
-  container.style.cursor = 'grab';
+  if (isDragging) {
+    isDragging = false; // Désactive le drag
+    container.style.cursor = 'grab'; // Change le curseur
+  }
 });
