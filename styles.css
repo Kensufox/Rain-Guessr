@@ -91,6 +91,7 @@ p {
   border: 6px solid;
   border-radius: 15px;
   border-color: #fff;
+  background-color: transparent;
 }
 
 @media screen and (orientation: portrait) {
