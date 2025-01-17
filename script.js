@@ -11,10 +11,10 @@ let scale = 1; // Facteur de zoom initial
 container.addEventListener('wheel', (e) => {
   e.preventDefault(); // Empêche le comportement par défaut (scroll)
 
-  // Définir l'intensité du zoom
-  const zoomIntensity = 0.1;
+  // Intensité du zoom (proportionnelle à l'échelle actuelle)
+  const zoomIntensity = 0.1 * scale; // Plus le zoom est élevé, plus l'effet est amplifié
   const delta = e.deltaY > 0 ? -zoomIntensity : zoomIntensity; // Zoom avant/arrière
-  scale = Math.min(Math.max(0.5, scale + delta), 3); // Limite le zoom entre 0.5 et 3
+  scale = Math.min(Math.max(0.5, scale + delta), 10); // Limite le zoom entre 0.5 et 10
 
   // Appliquer le zoom tout en préservant la position actuelle
   map.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
