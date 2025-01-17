@@ -1,5 +1,4 @@
 html {
-    scroll-behavior: smooth;
     width: 100%;
     height: 100%;
 }
@@ -11,13 +10,6 @@ html {
 @font-face {
   font-family: 'rain_world_menu_font_Webfont';
   src: url('font/rain-world-menu-font-webfont/rain-world-menu-font-webfont.ttf');
-}
-
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vmin;
 }
   
 body {
@@ -51,10 +43,11 @@ h1{
   justify-content: center;
   margin: 0px;
   height: auto;
+  width: auto;
 }
 
 .background {
-  background-image: url("pictures/rain-world-exteriors.jpg");
+  background-image: url("pictures/background/rain-world-exteriors.jpg");
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-size: cover;
