@@ -53,13 +53,14 @@ h1{
   background-size: cover;
 }
 
-p {
+a, p {
   color: #fff;;
   font-size: 30px;
   font-weight: bold;
   margin: 0px;
   margin-top: 3%;
   vertical-align: top;
+  text-decoration: none;
   font-family: rain_world_menu_font_Webfont;
 }
 
@@ -72,7 +73,7 @@ p {
   height: 60%;
 }
 
-.button {
+button {
   display: flex;
   flex-direction: column;
   align-items: center;
