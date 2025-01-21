@@ -1,10 +1,15 @@
-need a map to point the answer (can make different type of map: game like, full 2D)
-have something that calcul points gain from answer (base on: correct region, correct room, distance)
-have a picture bank of player in random place (a lot for it to not repeat)
+need a map to point the answer (can make different type of map: game like, full 2D) (will probably use Isaac map)
+have something that calcul points gain from answer (base on: correct region, correct room, distance, time take)
+have a picture bank of player in random place (a lot for it to not repeat) (probably not)
 a program that play the game (select a position, set a timer, and other parameter essential to a good game)
 have a menu to play the game and acces other menu:
 -setting : can change language, and other things (no idea for the moment)
 -account : register or login to your account to register your score
+-play    : you can choose a game mode and diffulculty and play de game
+-credit  : credit for all the dev and all the asser/code use
+
+game mode:
+-classique : just like geo guesser (similar to Isaac project)
 
 that all my idea for now, I think it's already a lot of thing to make, 
 I will try my best to make all of this work.
