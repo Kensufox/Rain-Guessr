@@ -1,2 +1,0 @@
-Template: SI_SettingsTemplate_Inside
-EffectColorB: 7

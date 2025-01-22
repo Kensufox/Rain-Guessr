@@ -1,2 +1,0 @@
-DangerType: Flood
-FadePalette: 20, 0.1956522

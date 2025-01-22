@@ -1,2 +1,0 @@
-DangerType: FloodAndRain
-BkgDroneVolume: 0.2769565

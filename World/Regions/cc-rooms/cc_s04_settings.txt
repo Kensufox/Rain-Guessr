@@ -1,2 +1,0 @@
-Palette: 3
-FadePalette: 15, 0.1847826

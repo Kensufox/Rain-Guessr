@@ -1,1 +1,0 @@
-Template: GW_SettingsTemplate_Inside
