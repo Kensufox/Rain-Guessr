@@ -1,0 +1,5 @@
+the map will be show by a program that convert rooms files* (modified version to only 
+keeps the room geometry) with javascript into a visual thing in the website
+
+*rooms files is the name I use to talk about the text files that stock the rooms 
+information (position, name, geometry, etc)
