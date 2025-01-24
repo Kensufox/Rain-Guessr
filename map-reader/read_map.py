@@ -245,35 +245,73 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 11:
                 grid[y][x] = '+'  # vertical pipe and horizontal pipe crossing
             elif cell == 12:
-                grid[y][x] = '5'  # also pipe crossing ? (need to be sure)
+                grid[y][x] = '+'  # also pipe crossing
             elif cell == 13:
                 grid[y][x] = '#'  # half block
             elif cell == 14:
-                grid[y][x] = '#'  # and of creature pipe
+                grid[y][x] = '#'  # end of creature pipe vertical
             elif cell == 15:
-                grid[y][x] = '8'
+                grid[y][x] = '4'
             elif cell == 16:
-                grid[y][x] = '9'
+                grid[y][x] = '5'
             elif cell == 17:
-                grid[y][x] = 'A'
+                grid[y][x] = '6'
             elif cell == 18:
-                grid[y][x] = 'B'
+                grid[y][x] = '#'  # end of creature pipe horizontal
             elif cell == 19:
-                grid[y][x] = 'C'
+                grid[y][x] = '8'
             elif cell == 20:
-                grid[y][x] = 'D'
+                grid[y][x] = '9'
             elif cell == 21:                
-                grid[y][x] = 'E'
+                grid[y][x] = 'A'
             elif cell == 22:
                 grid[y][x] = '|'   # hide inside room pipe behind vertical pole aligning             
             elif cell == 23:
-                grid[y][x] = 'G'
+                grid[y][x] = 'B'
             elif cell == 24:
-                grid[y][x] = 'H'
+                grid[y][x] = '+'  # also pipe crossing
             elif cell == 25:
                 grid[y][x] = '-'  # hide inside room pipe behind horizontal pole 
             elif cell == 26:
+                grid[y][x] = 'D'
+            elif cell == 27:
+                grid[y][x] = 'E'
+            elif cell == 28:
+                grid[y][x] = 'F'
+            elif cell == 29:
+                grid[y][x] = 'G'
+            elif cell == 30:
+                grid[y][x] = 'H'
+            elif cell == 31:
+                grid[y][x] = 'I'
+            elif cell == 32:
                 grid[y][x] = 'J'
+            elif cell == 33:
+                grid[y][x] = 'K'
+            elif cell == 34:
+                grid[y][x] = 'L'
+            elif cell == 35:
+                grid[y][x] = 'M'
+            elif cell == 36:
+                grid[y][x] = 'N'
+            elif cell == 37:
+                grid[y][x] = 'O'
+            elif cell == 38:
+                grid[y][x] = 'P'
+            elif cell == 39:
+                grid[y][x] = 'Q'
+            elif cell == 40:
+                grid[y][x] = 'R'
+            elif cell == 41:
+                grid[y][x] = 'S'
+            elif cell == 42:
+                grid[y][x] = 'T'
+            elif cell == 43:
+                grid[y][x] = 'U'
+            elif cell == 44:
+                grid[y][x] = 'V'
+            elif cell == 45:
+                grid[y][x] = 'W'
             else:
                 grid[y][x] = '?'  # Inconnu
 
