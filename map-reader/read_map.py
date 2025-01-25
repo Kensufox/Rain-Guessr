@@ -40,9 +40,9 @@ def render_ascii_art(width, height, geometry_data):
 
     for y in range(height):
         for x in range(width):
-            try :
+            if len(geometry_data[y+(x*height)]) == 1:
                 cell = float(geometry_data[y+(x*height)].replace(",", "."))
-            except ValueError:
+            else:
                 cell = -1
 
                 if geometry_data[y+(x*height)] == "1,4,3":
@@ -218,14 +218,30 @@ def render_ascii_art(width, height, geometry_data):
                 elif geometry_data[y+(x*height)] == "0,3,11,6":
                     cell = 90
                 elif geometry_data[y+(x*height)] == "4,3,1,6":
-                    cell = 91            
+                    cell = 91
+                elif geometry_data[y+(x*height)] == "1,3":
+                    cell = 92
+                elif geometry_data[y+(x*height)] == "0,6":
+                    cell = 93
+                elif geometry_data[y+(x*height)] == "0,1":
+                    cell = 94
+                elif geometry_data[y+(x*height)] == "3,6":
+                    cell = 95
+                elif geometry_data[y+(x*height)] == "0,2":
+                    cell = 96
+                elif geometry_data[y+(x*height)] == "2,6":
+                    cell = 97
+                elif geometry_data[y+(x*height)] == "1,10":
+                    cell = 98
+            if cell == -1:  
+                print(geometry_data[y+(x*height)])
                         
             if cell == 0:
                 grid[y][x] = '.'  # Air
             elif cell == 1:
                 grid[y][x] = '#'  # Mur
             elif cell == 2:
-                grid[y][x] = '~'  # Eau
+                grid[y][x] = '\\' # celling slope
             elif cell == 3:
                 grid[y][x] = '1'  # ?
             elif cell == 4:
@@ -251,77 +267,180 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 14:
                 grid[y][x] = '#'  # end of creature pipe vertical
             elif cell == 15:
-                grid[y][x] = '4'
+                grid[y][x] = '+'  # also crossing pipe
             elif cell == 16:
-                grid[y][x] = '5'
+                grid[y][x] = '3'
             elif cell == 17:
-                grid[y][x] = '6'
+                grid[y][x] = '4'
             elif cell == 18:
                 grid[y][x] = '#'  # end of creature pipe horizontal
             elif cell == 19:
-                grid[y][x] = '8'
+                grid[y][x] = '5'
             elif cell == 20:
-                grid[y][x] = '9'
+                grid[y][x] = '6'
             elif cell == 21:                
-                grid[y][x] = 'A'
+                grid[y][x] = '7'
             elif cell == 22:
                 grid[y][x] = '|'   # hide inside room pipe behind vertical pole aligning             
             elif cell == 23:
-                grid[y][x] = 'B'
+                grid[y][x] = '8'
             elif cell == 24:
                 grid[y][x] = '+'  # also pipe crossing
             elif cell == 25:
                 grid[y][x] = '-'  # hide inside room pipe behind horizontal pole 
             elif cell == 26:
-                grid[y][x] = 'D'
+                grid[y][x] = '9'
             elif cell == 27:
-                grid[y][x] = 'E'
+                grid[y][x] = 'A'
             elif cell == 28:
-                grid[y][x] = 'F'
+                grid[y][x] = '#'  # end creature pipe
             elif cell == 29:
-                grid[y][x] = 'G'
+                grid[y][x] = 'B'
             elif cell == 30:
-                grid[y][x] = 'H'
+                grid[y][x] = 'C'
             elif cell == 31:
-                grid[y][x] = 'I'
+                grid[y][x] = 'D'
             elif cell == 32:
-                grid[y][x] = 'J'
+                grid[y][x] = '#'  # underwater creature pipe
             elif cell == 33:
-                grid[y][x] = 'K'
+                grid[y][x] = 'E'
             elif cell == 34:
-                grid[y][x] = 'L'
+                grid[y][x] = '#'  # end creature pipe
             elif cell == 35:
-                grid[y][x] = 'M'
+                grid[y][x] = '|'  # also vertical pole
             elif cell == 36:
-                grid[y][x] = 'N'
+                grid[y][x] = '#'  # pole cross with half block
             elif cell == 37:
-                grid[y][x] = 'O'
+                grid[y][x] = '#'  # end between room pipe
             elif cell == 38:
-                grid[y][x] = 'P'
+                grid[y][x] = '#'  # I don't know
             elif cell == 39:
-                grid[y][x] = 'Q'
+                grid[y][x] = 'F'
             elif cell == 40:
-                grid[y][x] = 'R'
+                grid[y][x] = '.'  # background pipe
             elif cell == 41:
-                grid[y][x] = 'S'
+                grid[y][x] = '|'  # pipe and virtical pole crossing
             elif cell == 42:
-                grid[y][x] = 'T'
+                grid[y][x] = '#'  # end underwater creature pipe
             elif cell == 43:
-                grid[y][x] = 'U'
+                grid[y][x] = 'G'
             elif cell == 44:
-                grid[y][x] = 'V'
+                grid[y][x] = 'H'
             elif cell == 45:
+                grid[y][x] = 'I'
+            elif cell == 46:
+                grid[y][x] = 'J'
+            elif cell == 47:
+                grid[y][x] = '|'  # also vertical pole
+            elif cell == 48:
+                grid[y][x] = 'K'
+            elif cell == 49:
+                grid[y][x] = 'L'
+            elif cell == 50:
+                grid[y][x] = 'M'
+            elif cell == 51:
+                grid[y][x] = 'N'
+            elif cell == 52:
+                grid[y][x] = 'O'
+            elif cell == 53:
+                grid[y][x] = 'P'
+            elif cell == 54:
+                grid[y][x] = 'Q'
+            elif cell == 55:
+                grid[y][x] = 'R'
+            elif cell == 56:
+                grid[y][x] = 'S'
+            elif cell == 57:
+                grid[y][x] = 'T'
+            elif cell == 58:
+                grid[y][x] = 'U'
+            elif cell == 59:
+                grid[y][x] = 'V'
+            elif cell == 60:
+                grid[y][x] = '#'  # half block
+            elif cell == 61:
                 grid[y][x] = 'W'
+            elif cell == 62:
+                grid[y][x] = 'X'
+            elif cell == 63:
+                grid[y][x] = 'Y'
+            elif cell == 64:
+                grid[y][x] = 'Z'
+            elif cell == 65:
+                grid[y][x] = 'a'
+            elif cell == 66:
+                grid[y][x] = 'b'
+            elif cell == 67:
+                grid[y][x] = 'c'
+            elif cell == 68:
+                grid[y][x] = 'd'
+            elif cell == 69:
+                grid[y][x] = 'e'
+            elif cell == 70:
+                grid[y][x] = 'f'
+            elif cell == 71:
+                grid[y][x] = 'g'
+            elif cell == 72:
+                grid[y][x] = 'h'
+            elif cell == 73:
+                grid[y][x] = 'i'
+            elif cell == 74:
+                grid[y][x] = 'j'
+            elif cell == 75:
+                grid[y][x] = 'k'
+            elif cell == 76:
+                grid[y][x] = 'l'
+            elif cell == 77:
+                grid[y][x] = 'm'
+            elif cell == 78:
+                grid[y][x] = 'n'
+            elif cell == 79:
+                grid[y][x] = 'o'
+            elif cell == 80:
+                grid[y][x] = 'p'
+            elif cell == 81:
+                grid[y][x] = 'q'
+            elif cell == 82:
+                grid[y][x] = 'r'
+            elif cell == 83:
+                grid[y][x] = 's'
+            elif cell == 84:
+                grid[y][x] = 't'
+            elif cell == 85:
+                grid[y][x] = 'u'
+            elif cell == 86:
+                grid[y][x] = 'v'
+            elif cell == 87:
+                grid[y][x] = '#'  # half block
+            elif cell == 89:
+                grid[y][x] = 'x'
+            elif cell == 90:
+                grid[y][x] = 'y'
+            elif cell == 91:
+                grid[y][x] = '#'  # wall
+            elif cell == 92:
+                grid[y][x] = '#'  # end between room pipe
+            elif cell == 93:
+                grid[y][x] = '.'  # background
+            elif cell == 94:
+                grid[y][x] = '|'  # also vertical pole
+            elif cell == 95:
+                grid[y][x] = '#'  # entry creature pipe
+            elif cell == 96:
+                grid[y][x] = '-'  # horizontal pole
+            elif cell == 97:
+                grid[y][x] = '/'  # slope
+            elif cell == 98:
+                grid[y][x] = '#'  # something idk
             else:
                 grid[y][x] = '?'  # Inconnu
+                print(f"Valeur inconnue : {cell}")
 
     # Génération du rendu ASCII
     ascii_art = '\n'.join(''.join(row) for row in grid)
     return ascii_art
 
 
-# Chemin du fichier Room
-#file_path = os.path.join(path, "gw_c04.txt")
 
 def run(file_path):
     # Lecture et rendu de la pièce
@@ -344,3 +463,9 @@ for root, dirs, files in os.walk(file_path):
                     pass
             if count == 11:
                 run(os.path.join(root, file))
+
+# Chemin du fichier Room
+#file_path = os.path.join(path, "gw_c04.txt")
+#file_path = os.path.join(path, "gw_c11.txt")
+#file_path = os.path.join(path, "gw_a23.txt")
+#run(os.path.join(file_path))
