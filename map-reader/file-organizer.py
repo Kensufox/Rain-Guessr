@@ -17,7 +17,14 @@ for root, dirs, files in os.walk(file_path):
             with open(file_full_path, 'r') as f:
                 lines = f.readlines()
             # Specify the line to delete 
-            updated_lines = [line for idx, line in enumerate(lines) if idx != 10]
+            updated_lines = []
+            
+            for i, line in enumerate(lines):
+                if 0 <= i <= 3:
+                    updated_lines.append(line)
+            updated_lines.append('')
+            updated_lines.append(lines[-1])
+                
         except:
             print(f"Failed to delete 11th line from {file_full_path}")
 
@@ -27,5 +34,3 @@ for root, dirs, files in os.walk(file_path):
                 f.writelines(updated_lines)
         except:
             print(f"Failed to delete 11th line from {file_full_path}")
-
-        #print(f"Deleted 11th line from {file_full_path}")

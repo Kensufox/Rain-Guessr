@@ -28,7 +28,7 @@ def parse_room(file_path):
         elif i == 1:
             # Ligne avec les dimensions
             width, height = map(int, line.split('|')[0].split('*'))
-        elif i == 10:
+        elif i == 4:
             geometry_data = line.split('|')
 
     return room_name, width, height, geometry_data
@@ -237,9 +237,50 @@ def render_ascii_art(width, height, geometry_data):
                     cell = 99
                 elif geometry_data[y+(x*height)] == "0,3":
                     cell = 100
+                elif geometry_data[y+(x*height)] == "2,1":
+                    cell = 101
+                elif geometry_data[y+(x*height)] == "3,1":
+                    cell = 102
             if cell == -1:  
                 print(geometry_data[y+(x*height)])
-                        
+
+            
+            # I've tried to make an optimized versdion of this monstruous switch case, but it doesn't work, and was even slower.
+
+            #tile_data_path = os.path.join(path, "tile-data.txt")
+            #data_line = 0
+            #data_bool = False
+            #param_line = 0
+            #cell_bool = False
+            #with open(tile_data_path, 'r') as f:
+            #    lines = f.readlines()
+            #for i, line in enumerate(lines):
+            #    if line.startswith("param:"):
+            #        param_line = i
+            #    elif line.startswith("data:"):
+            #        data_line = i
+            #        data_bool = True
+            #    elif data_bool:
+            #        if i == data_line + 1 + cell:
+            #            temp = line.split('=')
+            #            temp = temp[1].replace('\n', '')
+            #            #print(i, temp, cell)
+            #            var_found = False
+            #            for pdata in range(data_line - param_line - 1):
+            #                temp_pdata = lines[pdata].split(';')
+            #                if temp == temp_pdata[0]:
+            #                    grid[y][x] = temp_pdata[1].replace('\n', '')
+            #                    var_found = True
+            #                    break
+            #            if not var_found:
+            #                grid[y][x] = temp
+            #                #print(f"Valeur inconnue : {cell}")
+            #            cell_bool = True
+            #if not cell_bool:
+            #    grid[y][x] = '?'
+            #    print(f"Valeur inconnue : {cell}")
+            ##print(grid[y][x])
+
             if cell == 0:
                 grid[y][x] = '.'  # Air
             elif cell == 1:
@@ -247,7 +288,7 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 2:
                 grid[y][x] = '\\' # celling slope
             elif cell == 3:
-                grid[y][x] = '.'  # end between room pipe
+                grid[y][x] = '#'  # start of creature pipe
             elif cell == 4:
                 grid[y][x] = '2'  # ?
             elif cell == 5:
@@ -275,19 +316,19 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 16:
                 grid[y][x] = '.'  # bat spawn/pipe/nest
             elif cell == 17:
-                grid[y][x] = '4'
+                grid[y][x] = '|'  # bat den and vertical pole crossing
             elif cell == 18:
                 grid[y][x] = '#'  # end of creature pipe horizontal
             elif cell == 19:
-                grid[y][x] = '5'
+                grid[y][x] = '.'  # end background between pipe
             elif cell == 20:
-                grid[y][x] = '6'
+                grid[y][x] = '/'  # slope
             elif cell == 21:
-                grid[y][x] = '-'   # hide inside room pipe behind horizontal pole aligning
+                grid[y][x] = '-'  # hide inside room pipe behind horizontal pole aligning
             elif cell == 22:
-                grid[y][x] = '|'   # hide inside room pipe behind vertical pole aligning             
+                grid[y][x] = '|'  # hide inside room pipe behind vertical pole aligning             
             elif cell == 23:
-                grid[y][x] = '8'
+                grid[y][x] = '.'  # bat den
             elif cell == 24:
                 grid[y][x] = '+'  # also pipe crossing
             elif cell == 25:
@@ -295,11 +336,11 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 26:
                 grid[y][x] = '9'
             elif cell == 27:
-                grid[y][x] = 'A'
+                grid[y][x] = '+'  # also pipe crossing
             elif cell == 28:
                 grid[y][x] = '#'  # end creature pipe
             elif cell == 29:
-                grid[y][x] = 'B'
+                grid[y][x] = '+'  # also pipe crossing
             elif cell == 30:
                 grid[y][x] = 'C'
             elif cell == 31:
@@ -393,7 +434,7 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 75:
                 grid[y][x] = 'k'
             elif cell == 76:
-                grid[y][x] = 'l'
+                grid[y][x] = '.'  # end between room pipe
             elif cell == 77:
                 grid[y][x] = 'm'
             elif cell == 78:
@@ -442,6 +483,8 @@ def render_ascii_art(width, height, geometry_data):
                 grid[y][x] = '.'  # between room pipe background
             elif cell == 101:
                 grid[y][x] = '/'  # slop and vertical pole crossing
+            elif cell == 102:
+                grid[y][x] = '#'  # half block and vertical pole crossing
             else:
                 grid[y][x] = '?'  # Inconnu
                 print(f"Valeur inconnue : {cell}")
@@ -450,7 +493,10 @@ def render_ascii_art(width, height, geometry_data):
     ascii_art = '\n'.join(''.join(row) for row in grid)
     return ascii_art
 
-
+output_file = os.path.join(path, "output.txt")
+open(output_file, 'w').close()
+error_file = os.path.join(path, "error.txt")
+open(error_file, 'w').close()
 
 def run(file_path):
     # Lecture et rendu de la pièce
@@ -462,8 +508,15 @@ def run(file_path):
         print(f"Pièce : {room_name}")
         print(f"taille : {width}x{height}")
         print(ascii_art)
+        with open(output_file, 'a') as f:
+            f.write(f"Pièce : {room_name}\n")
+            f.write(f"taille : {width}x{height}\n")
+            f.write(ascii_art)
+            f.write("\n")
     else:
         print("Erreur dans le fichier ou les dimensions.")
+        with open(output_file, 'a') as f:
+            print("Erreur dans le fichier ou les dimensions.")
 
 for root, dirs, files in os.walk(file_path):
     for file in files:
@@ -471,8 +524,14 @@ for root, dirs, files in os.walk(file_path):
             with open(os.path.join(root, file), 'r') as fp:
                 for count, line in enumerate(fp):
                     pass
-            if count == 11:
-                run(os.path.join(root, file))
+            if count == 4:
+                try:
+                    run(os.path.join(root, file))
+                except:
+                    print("something went wrong")
+                    with open(error_file, 'a') as f:
+                        f.write(os.path.join(root, file))
+                        f.write("\n")
 
 # Chemin du fichier Room
 #file_path = os.path.join(path, "gw_c04.txt")
