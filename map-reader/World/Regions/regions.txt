@@ -8,5 +8,4 @@ SH
 SL
 LF
 UW
-SB
 SS

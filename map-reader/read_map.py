@@ -28,7 +28,7 @@ def parse_room(file_path):
         elif i == 1:
             # Ligne avec les dimensions
             width, height = map(int, line.split('|')[0].split('*'))
-        elif i == 11:
+        elif i == 10:
             geometry_data = line.split('|')
 
     return room_name, width, height, geometry_data
@@ -233,6 +233,10 @@ def render_ascii_art(width, height, geometry_data):
                     cell = 97
                 elif geometry_data[y+(x*height)] == "1,10":
                     cell = 98
+                elif geometry_data[y+(x*height)] == "0,7":
+                    cell = 99
+                elif geometry_data[y+(x*height)] == "0,3":
+                    cell = 100
             if cell == -1:  
                 print(geometry_data[y+(x*height)])
                         
@@ -243,7 +247,7 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 2:
                 grid[y][x] = '\\' # celling slope
             elif cell == 3:
-                grid[y][x] = '1'  # ?
+                grid[y][x] = '.'  # end between room pipe
             elif cell == 4:
                 grid[y][x] = '2'  # ?
             elif cell == 5:
@@ -269,7 +273,7 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 15:
                 grid[y][x] = '+'  # also crossing pipe
             elif cell == 16:
-                grid[y][x] = '3'
+                grid[y][x] = '.'  # bat spawn/pipe/nest
             elif cell == 17:
                 grid[y][x] = '4'
             elif cell == 18:
@@ -278,8 +282,8 @@ def render_ascii_art(width, height, geometry_data):
                 grid[y][x] = '5'
             elif cell == 20:
                 grid[y][x] = '6'
-            elif cell == 21:                
-                grid[y][x] = '7'
+            elif cell == 21:
+                grid[y][x] = '-'   # hide inside room pipe behind horizontal pole aligning
             elif cell == 22:
                 grid[y][x] = '|'   # hide inside room pipe behind vertical pole aligning             
             elif cell == 23:
@@ -345,7 +349,7 @@ def render_ascii_art(width, height, geometry_data):
             elif cell == 53:
                 grid[y][x] = 'P'
             elif cell == 54:
-                grid[y][x] = 'Q'
+                grid[y][x] = '/'  # slope and vertical pole crossing
             elif cell == 55:
                 grid[y][x] = 'R'
             elif cell == 56:
@@ -432,6 +436,12 @@ def render_ascii_art(width, height, geometry_data):
                 grid[y][x] = '/'  # slope
             elif cell == 98:
                 grid[y][x] = '#'  # something idk
+            elif cell == 99:
+                grid[y][x] = '.'  # aslo bat nest
+            elif cell == 100:
+                grid[y][x] = '.'  # between room pipe background
+            elif cell == 101:
+                grid[y][x] = '/'  # slop and vertical pole crossing
             else:
                 grid[y][x] = '?'  # Inconnu
                 print(f"Valeur inconnue : {cell}")

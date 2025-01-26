@@ -8,7 +8,6 @@ SS_L01: 34.61487><1408.446><-21.68413><1230.896><0><Five Pebbles (General System
 SS_AI: 75.48756><1485.94><323.2068><1397.652><1><
 SS_E07: 43.61486><898.4474><82.3159><796.8971><0><Five Pebbles (General Systems Bus)
 SS_E06: 32.61482><561.4474><-129.6845><671.8971><0><Five Pebbles
-SS_C08: 240.6148><311.4473><103.3158><391.8971><0><Five Pebbles
 SS_A14: 995.6144><710.4469><809.3157><793.8971><0><Five Pebbles (Memory Conflux)
 SS_LAB13: 1156.615><711.4469><954.3157><792.8971><0><Five Pebbles (Memory Conflux)
 SS_A01: 1316.615><711.4469><1092.316><791.8971><0><Five Pebbles (Memory Conflux)
