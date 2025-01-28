@@ -1,0 +1,7 @@
+the rooms files, name based of the region it's from and the room name, stock data for the room: his name, coordinate, tile value, texture, and size
+
+in this project, we only use the room name, coordinate, size and tile value
+
+the name of the room are the region name, a letter and a number (CC_A02, 'CC' is the id of Chimeney Cannopy, 'A' mean the room is 1 screen, and '02' is the room id)
+
+the tile value are number that refer to a type of element, it can be: wall, background, vertical or horizontal or crossing pole, pipe circuit, pipe entry, creature pipe/den.
