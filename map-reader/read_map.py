@@ -2,7 +2,7 @@ import os
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-file = "World\Regions"
+file = "World\Regions\Rooms"
 file_path = os.path.join(path, file)
 
 strange_values = []
