@@ -5,7 +5,7 @@ import time
 path = os.path.dirname(os.path.abspath(__file__))
 
 # Specify the target directory relative to the script
-file = "World/Regions"  # Use forward slash for compatibility
+file = "downpour\world"  # Use forward slash for compatibility
 file_path = os.path.join(path, file)
 
 # Walk through the directories and files
