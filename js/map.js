@@ -1,18 +1,24 @@
-function main() {
+let gl;
+
+window.addEventListener("DOMContentLoaded", () => {
     console.log("Initialisation de WebGL...");
-    gl = document.querySelector("#canvas").getContext("webgl");
-    if (gl === null) {
+    
+    let canvas = document.querySelector("#canvas");
+    if (!canvas) {
+        console.error("Erreur : Impossible de trouver l'élément <canvas>.");
+        return;
+    }
+
+    gl = canvas.getContext("webgl");
+    if (!gl) {
         console.error("Erreur : Impossible d'initialiser WebGL.");
         return;
     }
+
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.SRC_ALPHA, gl.ONE);
-    programs["room"] = room_program();
-    programs["connection"] = connection_program();
-    programs["solution"] = solution_program();
-    programs["error_line"] = error_line_program();
     console.log("WebGL initialisé avec succès !");
-}
+});
 
 let map_path = "../map/World/Regions/Rooms";
 let rooms = {}; // Stocke les salles par région
@@ -36,18 +42,15 @@ fetch(map_path + "/regions.txt")
         // Attendre que toutes les requêtes soient terminées
         await Promise.all(fetchPromises);
 
-        //check all rooms
-        //console.log(rooms);
-        //console.log(Object.entries(rooms));
-        //console.log(Object.keys(rooms).length);
-        //for (const [key, value] of Object.entries(rooms)) {
-        //    console.log(key);
-        //    console.log(`${key}: ${value}`);
-        //}
-
         // Après avoir récupéré les salles, afficher la première salle
         let firstRegion = Object.keys(rooms)[0];  // Première région
         let firstRoom = rooms[firstRegion][0];    // Première salle
+
+        console.log("Salle trouvée :", firstRoom);
+
+        if (firstRoom.endsWith(".txt")) {
+            firstRoom = firstRoom.slice(0, -4); // Enlever ".txt" si déjà présent
+        }
 
         if (firstRegion && firstRoom) {
             console.log("Affichage de la première salle :", firstRoom);
@@ -59,14 +62,17 @@ fetch(map_path + "/regions.txt")
     .catch(error => console.error("Erreur lors du chargement des régions :", error));
 
 function loadRoomGeometry(region, room) {
-    let roomPath = `${map_path}/${region}/${room}`;
+    let roomPath = `${map_path}/${region}/${room}.txt`;
 
     console.log(`Chargement des données de la salle ${room} dans la région ${region}...`);
 
     fetch(roomPath)
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) throw new Error(`Fichier introuvable : ${roomPath}`);
+            return response.text();
+        })
         .then(data => {
-            console.log(`Données brutes pour ${room}:`, data);
+            //console.log(`Données brutes pour ${room}:`, data);
             
             // Convertir les données en géométrie utilisable
             let geometry = parseRoomGeometry(data);
@@ -95,11 +101,8 @@ function parseRoomGeometry(data) {
 
 function renderRoom(vertices) {
     if (!gl) {
-        gl = document.querySelector("#canvas").getContext("webgl");
-        if (!gl) {
-            console.error("Erreur WebGL : Impossible d'initialiser.");
-            return;
-        }
+        console.error("Erreur WebGL : Impossible d'initialiser. `gl` est null !");
+        return;
     }
 
     console.log("Rendu WebGL de la salle avec :", vertices.length, "points");

@@ -1,7 +1,6 @@
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_a04.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_a05.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_a06.txt
-c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_a23.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_b03.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_b04.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_b12.txt
@@ -33,4 +32,3 @@ c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\UW-ro
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\UW-rooms\uw_a14.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\UW-rooms\uw_d04.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\UW-rooms\uw_d07.txt
-c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\UW-rooms\uw_d08.txt
