@@ -55,6 +55,13 @@ h1{
   background-size: cover;
 }
 
+nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 1200px;
+}
+
 a, p {
   color: #fff;;
   font-size: 30px;
@@ -90,10 +97,24 @@ button {
 }
 
 footer {
+  flex: 1 1 auto;
   display: flex;
-  align-items: normal;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 110px;
+  width: 80%;
+  background: #bababa8c;
+  padding: 0px 10% 0px 10%;
+  transition: all 1s ease-in-out;
+}
+
+footer aside{
+  display: flex;
+  position: relative;
+  align-items: center;
   justify-content: center;
-  background-color: #bababa8c;
+  flex-direction: column;
   width: 100%;
 }
 
