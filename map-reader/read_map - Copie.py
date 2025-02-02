@@ -323,7 +323,7 @@ def ascii_to_vector(width, height, ascii_art):
                 #print(top, top_left, top_right, bottom, bottom_left, bottom_right, right, left)
 
                 if ascii[y][x] == '#': # wall
-                    # Check if the wall corner are points
+                    # Check if the wall corner are points inter angle
                     if right == '#' and bottom == '#' and bottom_right == '.': 
                         points_list.append([x+1, y+1])# bottom right corner of the wall is a point
                     if right == '#' and top == '#' and top_right == '.': 
@@ -332,7 +332,7 @@ def ascii_to_vector(width, height, ascii_art):
                         points_list.append([x, y+1])# bottom left corner of the wall is a point
                     if left == '#' and top == '#' and top_left == '.': 
                         points_list.append([x, y])# top left corner of the wall is a point
-
+                    # Check if the wall corner are points outer angle
                     if right == '.' and bottom == '.' and bottom_right == '.': 
                         points_list.append([x+1, y+1])# bottom right corner of the wall is a point
                     if right == '.' and top == '.' and top_right == '.': 
@@ -369,13 +369,13 @@ def ascii_to_vector(width, height, ascii_art):
             except:
                 print("error in ascii to vector, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
     # try make it work if needed (multiple points have the same coordinates)
-    #try:
-    #    for i in range(len(points_list)):
-    #        for j in range(len(points_list)):
-    #            if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
-    #                points_list.pop(j)
-    #except:
-    #    print("error in points_list")
+    try:
+        for i in range(len(points_list)):
+            for j in range(len(points_list)):
+                if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
+                    points_list.pop(j)
+    except:
+        print("error in points_list")
     print(points_list)
     return points_list
 
