@@ -290,32 +290,37 @@ def ascii_to_vector(width, height, ascii_art):
                 bordery = "top"
             elif y == height-1:
                 bordery = "bottom"
-                
+
             try:
                 top = None 
+                top_left = None 
+                top_right = None 
+                bottom = None 
+                bottom_left = None 
+                bottom_right = None 
                 if bordery != "top":  
                     top = ascii[y-1][x]
-                top_left = None 
-                if borderx != "left":
-                    top_left = ascii[y-1][x-1]
-                top_right = None 
-                if borderx != "right":  
-                    top_right = ascii[y-1][x+1]
-                bottom = None 
                 if bordery != "bottom":
                     bottom = ascii[y+1][x]
-                bottom_left = None 
-                if borderx != "left":
-                    bottom_left = ascii[y+1][x-1]
-                bottom_right = None 
-                if borderx != "right":
-                    bottom_right = ascii[y+1][x+1]
-                left = None 
-                if borderx != "left":
-                    left = ascii[y][x-1]
                 right = None 
+                left = None 
                 if borderx != "right":
                     right = ascii[y][x+1]
+                if borderx != "left":
+                    left = ascii[y][x-1]
+                    
+                if left:
+                    if top:
+                        top_left = ascii[y-1][x-1]
+                    if bottom:
+                        bottom_left = ascii[y+1][x-1]
+                if right:  
+                    if top:
+                        top_right = ascii[y-1][x+1]
+                    if bottom:
+                        bottom_right = ascii[y+1][x+1]
+
+                #print(top, top_left, top_right, bottom, bottom_left, bottom_right, right, left)
 
                 if ascii[y][x] == '#': # wall
                     # Check if the wall corner are points
@@ -326,6 +331,15 @@ def ascii_to_vector(width, height, ascii_art):
                     if left == '#' and bottom == '#' and bottom_left == '.': 
                         points_list.append([x, y+1])# bottom left corner of the wall is a point
                     if left == '#' and top == '#' and top_left == '.': 
+                        points_list.append([x, y])# top left corner of the wall is a point
+
+                    if right == '.' and bottom == '.' and bottom_right == '.': 
+                        points_list.append([x+1, y+1])# bottom right corner of the wall is a point
+                    if right == '.' and top == '.' and top_right == '.': 
+                        points_list.append([x+1, y])# top right corner of the wall is a point
+                    if left == '.' and bottom == '.' and bottom_left == '.': 
+                        points_list.append([x, y+1])# bottom left corner of the wall is a point
+                    if left == '.' and top == '.' and top_left == '.': 
                         points_list.append([x, y])# top left corner of the wall is a point
                 if ascii[y][x] == '/': # slope
                     # Chek if slope is in wall
@@ -353,11 +367,14 @@ def ascii_to_vector(width, height, ascii_art):
                         if bottom_left != "/":
                             points_list.append([x, y+1])
             except:
-                print("error in ascii to vector, cell = ", x, y, "and it contain : ", ascii[y][x])
-    for i in range(len(points_list)):
-        for j in range(len(points_list)):
-            if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
-                points_list.pop(j)
+                print("error in ascii to vector, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
+    try:
+        for i in range(len(points_list)):
+            for j in range(len(points_list)):
+                if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
+                    points_list.pop(j)
+    except:
+        print("error in points_list")
     print(points_list)
     return points_list
 
@@ -371,8 +388,8 @@ def run(root, file):
         # Affichage
         print(f"Pièce : {room_name}")
         print(f"taille : {width}x{height}")
-        print(list_error)
-        print(ascii_art)
+        #print(list_error)
+        #print(ascii_art)
         with open(output_file, 'a') as f:
             f.write(f"Pièce : {room_name}\n")
             f.write(f"taille : {width}x{height}\n")
