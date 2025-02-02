@@ -10,7 +10,6 @@ file2_path = os.path.join(path, file2)
 strange_values = []
 
 def parse_room(spe_file_path):
-    print(spe_file_path)
     with open(spe_file_path, 'r') as file:
         lines = file.readlines()
 
@@ -240,7 +239,7 @@ def render_ascii_art(width, height, geometry_data):
 
             if cell == 0:
                 grid[y][x] = '.'  # air
-            elif cell == 1 or cell == 3:
+            elif cell == 1:
                 grid[y][x] = '#'  # wall
             elif cell == 2:
                 grid[y][x] = '/' # slope
@@ -269,35 +268,98 @@ open(error_file, 'w').close()
 
 list_error = []
 
+def string_to_dict(string):
+    string_lines = string.strip().split("\n")
+    string_dict = [[] for _ in range(len(string_lines))]
+    for l in range(len(string_lines)):
+        string_dict[l] = list(string_lines[l])
+    return string_dict
+
 def ascii_to_vector(width, height, ascii_art):
     points_list = []
+    ascii = string_to_dict(ascii_art)
     for y in range(height):
         for x in range(width):
-            if ascii_art[y][x] == '#': # wall
-                # Check if the wall corner are points
-                if ascii_art[y][x+1] == '#' and ascii_art[y+1][x] == '#' and ascii_art[y+1][x+1] == '.': 
-                    # bottom right corner of the wall is a point
-                    points_list.append([x+1, y+1])
-                if ascii_art[y][x+1] == '#' and ascii_art[y-1][x] == '#' and ascii_art[y-1][x+1] == '.': 
-                    # top right corner of the wall is a point
-                    points_list.append([x+1, y])
-                if ascii_art[y][x-1] == '#' and ascii_art[y+1][x] == '#' and ascii_art[y+1][x-1] == '.': 
-                    # bottom left corner of the wall is a point
-                    points_list.append([x, y+1])
-                if ascii_art[y][x-1] == '#' and ascii_art[y-1][x] == '#' and ascii_art[y-1][x-1] == '.': 
-                    # top left corner of the wall is a point
-                    points_list.append([x, y])
-            if ascii_art[y][x] == '/': # slope
-                # Check the slope orientation and if near other slope
-                if ascii_art[y][x+1] == "#" and ascii_art[y+1][x] == "#":
-                    # slope is oriented to the right = /
-                if ascii_art[y][x-1] == "#" and ascii_art[y+1][x] == "#":
-                    # slope is oriented to the right = \
-                if ascii_art[y][x+1] == "#" and ascii_art[y-1][x] == "#":
-                    # slope is oriented to the right = \
-                if ascii_art[y][x-1] == "#" and ascii_art[y-1][x] == "#":
-                    # slope is oriented to the right = /
+            borderx = None
+            bordery = None
+            if x == 0:
+                borderx = "left"
+            elif x == width-1:
+                borderx = "right"    
+            if y == 0:
+                bordery = "top"
+            elif y == height-1:
+                bordery = "bottom"
+                
+            try:
+                top = None 
+                if bordery != "top":  
+                    top = ascii[y-1][x]
+                top_left = None 
+                if borderx != "left":
+                    top_left = ascii[y-1][x-1]
+                top_right = None 
+                if borderx != "right":  
+                    top_right = ascii[y-1][x+1]
+                bottom = None 
+                if bordery != "bottom":
+                    bottom = ascii[y+1][x]
+                bottom_left = None 
+                if borderx != "left":
+                    bottom_left = ascii[y+1][x-1]
+                bottom_right = None 
+                if borderx != "right":
+                    bottom_right = ascii[y+1][x+1]
+                left = None 
+                if borderx != "left":
+                    left = ascii[y][x-1]
+                right = None 
+                if borderx != "right":
+                    right = ascii[y][x+1]
 
+                if ascii[y][x] == '#': # wall
+                    # Check if the wall corner are points
+                    if right == '#' and bottom == '#' and bottom_right == '.': 
+                        points_list.append([x+1, y+1])# bottom right corner of the wall is a point
+                    if right == '#' and top == '#' and top_right == '.': 
+                        points_list.append([x+1, y])# top right corner of the wall is a point
+                    if left == '#' and bottom == '#' and bottom_left == '.': 
+                        points_list.append([x, y+1])# bottom left corner of the wall is a point
+                    if left == '#' and top == '#' and top_left == '.': 
+                        points_list.append([x, y])# top left corner of the wall is a point
+                if ascii[y][x] == '/': # slope
+                    # Chek if slope is in wall
+                    if bottom == '#' and right == '#' and top == '#' and left == '#':
+                        print("slope in wall")
+                        pass
+                    slope_orientation = None
+                    # Check the slope orientation and if near other slope
+                    if right == "#" and bottom == "#":
+                        slope_orientation = "right"# slope is oriented to the right = /
+                    elif left == "#" and bottom == "#":
+                        slope_orientation = "left"# slope is oriented to the left = \
+                    elif right == "#" and top == "#":
+                        slope_orientation = "left"# slope is oriented to the left = \
+                    elif left == "#" and top == "#":
+                        slope_orientation = "right"# slope is oriented to the right = /
+                    if slope_orientation == "left":
+                        if bottom_right != "/":
+                            points_list.append([x+1, y+1])
+                        if top_left != "/":
+                            points_list.append([x, y])
+                    elif slope_orientation == "right":
+                        if top_right != "/":
+                            points_list.append([x+1, y])
+                        if bottom_left != "/":
+                            points_list.append([x, y+1])
+            except:
+                print("error in ascii to vector, cell = ", x, y, "and it contain : ", ascii[y][x])
+    for i in range(len(points_list)):
+        for j in range(len(points_list)):
+            if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
+                points_list.pop(j)
+    print(points_list)
+    return points_list
 
 def run(root, file):
     spe_file_path = os.path.join(root, file)
@@ -321,14 +383,30 @@ def run(root, file):
         print("Erreur dans le fichier ou les dimensions.")
         with open(output_file, 'a') as f:
             print("Erreur dans le fichier ou les dimensions.")
+    try:
+        points_list = ascii_to_vector(width, height, ascii_art)
+    except:
+        print("ascii to vector error")
 
-    relative_path = os.path.relpath(root, file_path)
-    writing_file = os.path.join(file2_path, relative_path, file)
-    open(writing_file, 'w').close()
-    with open(writing_file, 'a') as f:
-        f.write(f"Pièce : {room_name}\n")
-        f.write(f"taille : {width}x{height}\n")
-        f.write(ascii_art)
+    try:
+        relative_path = os.path.relpath(root, file_path)
+        writing_file = os.path.join(file2_path, relative_path, file)
+        open(writing_file, 'w').close()
+        with open(writing_file, 'a') as f:
+            f.write(f"Pièce : {room_name}\n")
+            f.write(f"taille : {width}x{height}\n")
+            f.write(ascii_art + "\n")
+            try:
+                for i in range(len(points_list)):
+                    f.write(str(points_list[i][0]))
+                    f.write(",")
+                    f.write(str(points_list[i][1]))
+                    f.write("|")
+            except:
+                print("error will writing points list")
+
+    except:
+        print("error will writing outputs files")
 
 for root, dirs, files in os.walk(file_path):
     for file in files:
