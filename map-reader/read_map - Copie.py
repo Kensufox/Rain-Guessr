@@ -368,13 +368,14 @@ def ascii_to_vector(width, height, ascii_art):
                             points_list.append([x, y+1])
             except:
                 print("error in ascii to vector, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
-    try:
-        for i in range(len(points_list)):
-            for j in range(len(points_list)):
-                if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
-                    points_list.pop(j)
-    except:
-        print("error in points_list")
+    # try make it work if needed (multiple points have the same coordinates)
+    #try:
+    #    for i in range(len(points_list)):
+    #        for j in range(len(points_list)):
+    #            if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
+    #                points_list.pop(j)
+    #except:
+    #    print("error in points_list")
     print(points_list)
     return points_list
 
