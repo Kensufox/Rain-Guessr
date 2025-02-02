@@ -96,10 +96,6 @@ def render_ascii_art(width, height, geometry_data):
                     cell = 28
                 elif geometry_data[y+(x*height)] == "0,1,2,3,6":
                     cell = 29
-                elif geometry_data[y+(x*height)] == "4,3,2,6":
-                    cell = 30
-                elif geometry_data[y+(x*height)] == "3,3,1,6":
-                    cell = 31
                 elif geometry_data[y+(x*height)] == "4,6,3":
                     cell = 32
                 elif geometry_data[y+(x*height)] == "0,6,7":
@@ -128,94 +124,36 @@ def render_ascii_art(width, height, geometry_data):
                     cell = 44
                 elif geometry_data[y+(x*height)] == "3,1,2,6":
                     cell = 45
-                elif geometry_data[y+(x*height)] == "4,3,1":
-                    cell = 46
                 elif geometry_data[y+(x*height)] == "0,1,3":
                     cell = 47
                 elif geometry_data[y+(x*height)] == "0,1,3,2,6":
                     cell = 48
                 elif geometry_data[y+(x*height)] == "0,3,1,2,6":
                     cell = 49
-                elif geometry_data[y+(x*height)] == "0,3,1":
-                    cell = 50
-                elif geometry_data[y+(x*height)] == "0,3,2":
-                    cell = 51
-                elif geometry_data[y+(x*height)] == "0,3,2,1,6":
-                    cell = 52
                 elif geometry_data[y+(x*height)] == "3,3,6":
                     cell = 53
                 elif geometry_data[y+(x*height)] == "2,1,6":
                     cell = 54
-                elif geometry_data[y+(x*height)] == "1,4,3,6":
-                    cell = 55
-                elif geometry_data[y+(x*height)] == "1,3,6":
-                    cell = 56
                 elif geometry_data[y+(x*height)] == "0,8,6":
                     cell = 57
                 elif geometry_data[y+(x*height)] == "2,2,6":
                     cell = 58
-                elif geometry_data[y+(x*height)] == "4,3,3,6":
-                    cell = 59
                 elif geometry_data[y+(x*height)] == "3,2,1,6":
                     cell = 60
-                elif geometry_data[y+(x*height)] == "3,1,2":
-                    cell = 61
-                elif geometry_data[y+(x*height)] == "0,7,1":
-                    cell = 62
                 elif geometry_data[y+(x*height)] == "0,7,1,6":
                     cell = 63
-                elif geometry_data[y+(x*height)] == "4,3,1,3,6":
-                    cell = 64
                 elif geometry_data[y+(x*height)] == "0,11,6":
                     cell = 65
                 elif geometry_data[y+(x*height)] == "0,1,11,6":
                     cell = 66
-                elif geometry_data[y+(x*height)] == "0,11,3,6":
-                    cell = 67
-                elif geometry_data[y+(x*height)] == "0,11,1":
-                    cell = 68
-                elif geometry_data[y+(x*height)] == "4,6,1,3":
-                    cell = 69
-                elif geometry_data[y+(x*height)] == "0,6,1,8":
-                    cell = 70
-                elif geometry_data[y+(x*height)] == "0,6,8":
-                    cell = 71
-                elif geometry_data[y+(x*height)] == "0,6,3,9":
-                    cell = 72
-                elif geometry_data[y+(x*height)] == "0,6,1,2":
-                    cell = 73
-                elif geometry_data[y+(x*height)] == "0,7,3,6":
-                    cell = 74
-                elif geometry_data[y+(x*height)] == "0,4,1,3,6":
-                    cell = 75
                 elif geometry_data[y+(x*height)] == "0,4,3":
                     cell = 76
                 elif geometry_data[y+(x*height)] == "0,2,3":
                     cell = 77
-                elif geometry_data[y+(x*height)] == "2,6,1":
-                    cell = 78
-                elif geometry_data[y+(x*height)] == "0,8,1,6":
-                    cell = 79
-                elif geometry_data[y+(x*height)] == "0,1,8,6":
-                    cell = 80
                 elif geometry_data[y+(x*height)] == "0,9,3":
                     cell = 81
-                elif geometry_data[y+(x*height)] == "4,3,2":
-                    cell = 82
-                elif geometry_data[y+(x*height)] == "4,3,2,1,6":
-                    cell = 83
-                elif geometry_data[y+(x*height)] == "0,9,3,6":
-                    cell = 84
-                elif geometry_data[y+(x*height)] == "4,3,3,1,6":
-                    cell = 85
-                elif geometry_data[y+(x*height)] == "0,6,11":
-                    cell = 86
                 elif geometry_data[y+(x*height)] == "3,1,3,6":
                     cell = 87
-                elif geometry_data[y+(x*height)] == "0,11,1,6":
-                    cell = 88
-                elif geometry_data[y+(x*height)] == "0,1,11":
-                    cell = 89
                 elif geometry_data[y+(x*height)] == "0,3,11,6":
                     cell = 90
                 elif geometry_data[y+(x*height)] == "4,3,1,6":
@@ -253,7 +191,47 @@ def render_ascii_art(width, height, geometry_data):
                 elif geometry_data[y+(x*height)] == "2,2":
                     cell = 107
                 elif geometry_data[y+(x*height)] == "2,3":
-                    cell = 107
+                    cell = 108
+                elif geometry_data[y+(x*height)] == "4,3,2,6":
+                    cell = 109
+                elif geometry_data[y+(x*height)] == "4,3,1,3,6":
+                    cell = 110
+                elif geometry_data[y+(x*height)] == "4,3,3,6":
+                    cell = 111
+                elif geometry_data[y+(x*height)] == "0,11,1":
+                    cell = 112
+                elif geometry_data[y+(x*height)] == "0,1,11":
+                    cell = 113
+                elif geometry_data[y+(x*height)] == "4,3,1":
+                    cell = 114
+                elif geometry_data[y+(x*height)] == "4,6,1,3":
+                    cell = 115
+                elif geometry_data[y+(x*height)] == "0,6,1,2":
+                    cell = 116
+                elif geometry_data[y+(x*height)] == "2,6,1":
+                    cell = 117
+                elif geometry_data[y+(x*height)] == "0,7,1":
+                    cell = 118
+                elif geometry_data[y+(x*height)] == "0,8,1,6":
+                    cell = 119
+                elif geometry_data[y+(x*height)] == "0,1,8,6":
+                    cell = 120
+                elif geometry_data[y+(x*height)] == "0,2,8,6":
+                    cell = 121
+                elif geometry_data[y+(x*height)] == "4,3,2":
+                    cell = 122
+                elif geometry_data[y+(x*height)] == "4,3,2,1,6":
+                    cell = 123
+                elif geometry_data[y+(x*height)] == "0,7,3,6":
+                    cell = 124
+                elif geometry_data[y+(x*height)] == "0,6,11":
+                    cell = 125
+                elif geometry_data[y+(x*height)] == "0,3,2":
+                    cell = 126
+                elif geometry_data[y+(x*height)] == "13":
+                    cell = 13
+                elif geometry_data[y+(x*height)] == "11":
+                    cell = 11
             if cell == -1:  
                 list_error.append(geometry_data[y+(x*height)])
                 print(geometry_data[y+(x*height)])
@@ -303,8 +281,6 @@ def render_ascii_art(width, height, geometry_data):
                 grid[y][x] = '\\' # celling slope
             elif cell == 3:
                 grid[y][x] = '#'  # start of creature pipe
-            elif cell == 4:
-                grid[y][x] = '2'  # ?
             elif cell == 5:
                 grid[y][x] = '#'  # and of between room pipe
             elif cell == 6:
@@ -355,10 +331,6 @@ def render_ascii_art(width, height, geometry_data):
                 grid[y][x] = '#'  # end creature pipe
             elif cell == 29:
                 grid[y][x] = '+'  # also pipe crossing
-            elif cell == 30:
-                grid[y][x] = 'C'
-            elif cell == 31:
-                grid[y][x] = 'D'
             elif cell == 32:
                 grid[y][x] = '#'  # underwater creature pipe
             elif cell == 33:
@@ -387,92 +359,36 @@ def render_ascii_art(width, height, geometry_data):
                 grid[y][x] = 'H'  # half block
             elif cell == 45:
                 grid[y][x] = 'H'  # half block and vertical pole crossing
-            elif cell == 46:
-                grid[y][x] = 'J'
             elif cell == 47:
                 grid[y][x] = '|'  # also vertical pole
             elif cell == 48:
                 grid[y][x] = '+'  # also pipe crossing
             elif cell == 49:
-                grid[y][x] = 'L'
-            elif cell == 50:
-                grid[y][x] = 'M'
-            elif cell == 51:
-                grid[y][x] = 'N'
-            elif cell == 52:
-                grid[y][x] = 'O'
+                grid[y][x] = '+'  # also pipe crossing
             elif cell == 53:
                 grid[y][x] = 'H'  # half block and background pipe crossing
             elif cell == 54:
                 grid[y][x] = '/'  # slope and vertical pole crossing
-            elif cell == 55:
-                grid[y][x] = 'R'
-            elif cell == 56:
-                grid[y][x] = 'S'
             elif cell == 57:
                 grid[y][x] = '.'  # background plant
             elif cell == 58:
                 grid[y][x] = '/'  # slope and horizontal pole crossing
-            elif cell == 59:
-                grid[y][x] = 'V'
             elif cell == 60:
                 grid[y][x] = 'H'  # half block
-            elif cell == 61:
-                grid[y][x] = 'W'
-            elif cell == 62:
-                grid[y][x] = 'X'
             elif cell == 63:
-                grid[y][x] = 'Y'
-            elif cell == 64:
-                grid[y][x] = 'Z'
+                grid[y][x] = '|'  # vertical pole and background grass crossing
             elif cell == 65:
                 grid[y][x] = '.'  # grass worm
             elif cell == 66:
-                grid[y][x] = 'b'
-            elif cell == 67:
-                grid[y][x] = 'c'
-            elif cell == 68:
-                grid[y][x] = 'd'
-            elif cell == 69:
-                grid[y][x] = 'e'
-            elif cell == 70:
-                grid[y][x] = 'f'
-            elif cell == 71:
-                grid[y][x] = 'g'
-            elif cell == 72:
-                grid[y][x] = 'h'
-            elif cell == 73:
-                grid[y][x] = 'i'
-            elif cell == 74:
-                grid[y][x] = 'j'
-            elif cell == 75:
-                grid[y][x] = 'k'
+                grid[y][x] = '|'  # vertical pole and grass worm crossing
             elif cell == 76:
                 grid[y][x] = '.'  # end between room pipe
             elif cell == 77:
                 grid[y][x] = '-'  # horizontal pole
-            elif cell == 78:
-                grid[y][x] = 'n'
-            elif cell == 79:
-                grid[y][x] = 'o'
-            elif cell == 80:
-                grid[y][x] = 'p'
             elif cell == 81:
                 grid[y][x] = '.'  # background thing
-            elif cell == 82:
-                grid[y][x] = 'r'
-            elif cell == 83:
-                grid[y][x] = 's'
-            elif cell == 84:
-                grid[y][x] = 't'
-            elif cell == 85:
-                grid[y][x] = 'u'
-            elif cell == 86:
-                grid[y][x] = 'v'
             elif cell == 87:
                 grid[y][x] = 'H'  # half block
-            elif cell == 89:
-                grid[y][x] = 'x'
             elif cell == 90:
                 grid[y][x] = '.'  # grass worm
             elif cell == 91:
@@ -511,6 +427,42 @@ def render_ascii_art(width, height, geometry_data):
                 grid[y][x] = '/'  # slope and horizontal pole crossing 
             elif cell == 108:
                 grid[y][x] = '/'  # slope
+            elif cell == 109:
+                grid[y][x] = '-'  # horizontal pole and in room pipe
+            elif cell == 110:
+                grid[y][x] = '#'  # wall
+            elif cell == 111:
+                grid[y][x] = '='  # pipe
+            elif cell == 112:
+                grid[y][x] = '#'  # wall
+            elif cell == 113:
+                grid[y][x] = '|'  # vertical pole and grass worm crossing
+            elif cell == 114:
+                grid[y][x] = '#'  # wall
+            elif cell == 115:
+                grid[y][x] = '#'  # wall
+            elif cell == 116:
+                grid[y][x] = '+'  # pole crossing
+            elif cell == 117:
+                grid[y][x] = '/'  # slope and vertical pole crossing
+            elif cell == 118:
+                grid[y][x] = '#'  # wall
+            elif cell == 119:
+                grid[y][x] = '|'  # vertical pole
+            elif cell == 120:
+                grid[y][x] = '|'  # vertical pole
+            elif cell == 121:
+                grid[y][x] = '-'  # horizontal pole
+            elif cell == 122:
+                grid[y][x] = '#'  # wall
+            elif cell == 123:
+                grid[y][x] = '#'  # wall
+            elif cell == 124:
+                grid[y][x] = '.'  # air or something in the background
+            elif cell == 125:
+                grid[y][x] = '.'  # grass worm
+            elif cell == 126:
+                grid[y][x] = '.'  # vertical pole
             else:
                 grid[y][x] = '?'  # Inconnu
                 print(f"Valeur inconnue : {cell}")

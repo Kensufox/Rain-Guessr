@@ -1,4 +1,3 @@
-c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_a04.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_a05.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_a06.txt
 c:\Users\matis\Documents\GitHub\Rain-Guessr\map-reader\World\Regions\Rooms\SH-rooms\sh_b03.txt
