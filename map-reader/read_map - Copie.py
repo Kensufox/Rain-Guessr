@@ -275,113 +275,143 @@ def string_to_dict(string):
         string_dict[l] = list(string_lines[l])
     return string_dict
 
-def ascii_to_vector(width, height, ascii_art):
-    points_list = []
+def check_AOB(width, height, ascii, x, y):
+    borderx = None
+    bordery = None
+    if x == 0:
+        borderx = "left"
+    elif x == width-1:
+        borderx = "right"    
+    if y == 0:
+        bordery = "top"
+    elif y == height-1:
+        bordery = "bottom"
+    try:
+        top = None 
+        top_left = None 
+        top_right = None 
+        bottom = None 
+        bottom_left = None 
+        bottom_right = None 
+        if bordery != "top":  
+            top = ascii[y-1][x]
+        if bordery != "bottom":
+            bottom = ascii[y+1][x]
+        right = None 
+        left = None 
+        if borderx != "right":
+            right = ascii[y][x+1]
+        if borderx != "left":
+            left = ascii[y][x-1]
+            
+        if left:
+            if top:
+                top_left = ascii[y-1][x-1]
+            if bottom:
+                bottom_left = ascii[y+1][x-1]
+        if right:  
+            if top:
+                top_right = ascii[y-1][x+1]
+            if bottom:
+                bottom_right = ascii[y+1][x+1]            
+    except:
+        print("error while trying to check AOB")
+
+    return top, top_left, top_right, bottom, bottom_left, bottom_right, left, right, borderx, bordery
+
+
+def ascii_to_vector_wall(width, height, ascii_art):
+    points_list_w = []
     ascii = string_to_dict(ascii_art)
     for y in range(height):
         for x in range(width):
-            borderx = None
-            bordery = None
-            if x == 0:
-                borderx = "left"
-            elif x == width-1:
-                borderx = "right"    
-            if y == 0:
-                bordery = "top"
-            elif y == height-1:
-                bordery = "bottom"
 
             try:
-                top = None 
-                top_left = None 
-                top_right = None 
-                bottom = None 
-                bottom_left = None 
-                bottom_right = None 
-                if bordery != "top":  
-                    top = ascii[y-1][x]
-                if bordery != "bottom":
-                    bottom = ascii[y+1][x]
-                right = None 
-                left = None 
-                if borderx != "right":
-                    right = ascii[y][x+1]
-                if borderx != "left":
-                    left = ascii[y][x-1]
-                    
-                if left:
-                    if top:
-                        top_left = ascii[y-1][x-1]
-                    if bottom:
-                        bottom_left = ascii[y+1][x-1]
-                if right:  
-                    if top:
-                        top_right = ascii[y-1][x+1]
-                    if bottom:
-                        bottom_right = ascii[y+1][x+1]
+                top, top_left, top_right, bottom, bottom_left, bottom_right, left, right, borderx, bordery = check_AOB(width, height, ascii, x, y)
 
                 if ascii[y][x] == '#': # wall
                     # Check if the wall corner are points inter angle
                     if {right, bottom} == {'#'} and bottom_right in {'.', '='}:
-                        points_list.append([x+1, y+1])# bottom right corner of the wall is a point
+                        points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
                     if {right, top} == {'#'} and top_right in {'.', '='}:
-                        points_list.append([x+1, y])# top right corner of the wall is a point
+                        points_list_w.append([x+1, y])# top right corner of the wall is a point
                     if {left, bottom} == {'#'} and bottom_left in {'.', '='}:
-                        points_list.append([x, y+1])# bottom left corner of the wall is a point
+                        points_list_w.append([x, y+1])# bottom left corner of the wall is a point
                     if {left, top} == {'#'} and top_left in {'.', '='}:
-                        points_list.append([x, y])# top left corner of the wall is a point
+                        points_list_w.append([x, y])# top left corner of the wall is a point
                     # Check if the wall corner are points outer angle
                     if {right, bottom, bottom_right} <= {'.', '='}:
-                        points_list.append([x+1, y+1])# bottom right corner of the wall is a point
+                        points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
                     if {right, top, top_right} <= {'.', '='}:
-                        points_list.append([x+1, y])# top right corner of the wall is a point
+                        points_list_w.append([x+1, y])# top right corner of the wall is a point
                     if {left, bottom, bottom_left} <= {'.', '='}:
-                        points_list.append([x, y+1])# bottom left corner of the wall is a point
+                        points_list_w.append([x, y+1])# bottom left corner of the wall is a point
                     if {left, top, top_left} <= {'.', '='}:
-                        points_list.append([x, y])# top left corner of the wall is a point
+                        points_list_w.append([x, y])# top left corner of the wall is a point
                     # Check for corner in map border
                     if borderx == "left" and bordery == None:
                         if top == ".":
-                            points_list.append([x, y])
+                            points_list_w.append([x, y])
                         if bottom == ".": 
-                            points_list.append([x, y+1])
+                            points_list_w.append([x, y+1])
                     elif borderx == "right" and bordery == None:
                         if top == ".": 
-                            points_list.append([x+1, y])
+                            points_list_w.append([x+1, y])
                         if bottom == ".": 
-                            points_list.append([x+1, y+1])
+                            points_list_w.append([x+1, y+1])
 
                     if bordery == "top" and borderx == None:
                         if left == ".":
-                            points_list.append([x, y])
+                            points_list_w.append([x, y])
                         if right == ".": 
-                            points_list.append([x+1, y])
+                            points_list_w.append([x+1, y])
                     elif bordery == "bottom" and borderx == None:
                         if left == ".": 
-                            points_list.append([x, y+1])
+                            points_list_w.append([x, y+1])
                         if right == ".": 
-                            points_list.append([x+1, y+1])
+                            points_list_w.append([x+1, y+1])
                     
                     if borderx == "left" and bordery == "top":
                         if right == ".":
-                            points_list.append([x+1, y])
+                            points_list_w.append([x+1, y])
                         if bottom == ".": 
-                            points_list.append([x, y+1])
+                            points_list_w.append([x, y+1])
                     elif borderx == "right" and bordery == "top":
                         if left == ".": 
-                            points_list.append([x, y])
+                            points_list_w.append([x, y])
                         if bottom == ".": 
-                            points_list.append([x+1, y+1])
+                            points_list_w.append([x+1, y+1])
                     elif borderx == "left" and bordery == "bottom":
                         if right == ".": 
-                            points_list.append([x+1, y+1])
+                            points_list_w.append([x+1, y+1])
                         if top == ".": 
-                            points_list.append([x, y])
+                            points_list_w.append([x, y])
                     elif borderx == "right" and bordery == "bottom":
                         if left == ".": 
-                            points_list.append([x, y+1])
+                            points_list_w.append([x, y+1])
                         if top == ".": 
-                            points_list.append([x+1, y])
+                            points_list_w.append([x+1, y])
+            except:
+                print("error in ascii to vector for the wall, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
+    try:
+        points_list_w = list(set(map(tuple, points_list_w)))
+    except:
+        print("error in points_list_w")
+    try:
+        points_list_w.sort()
+    except:
+        print("error sorting points_list_w")
+    return points_list_w
+
+def ascii_to_vector_slope(width, height, ascii_art):
+    points_list_sl = []
+    points_list_sr = []
+    ascii = string_to_dict(ascii_art)
+    for y in range(height):
+        for x in range(width):
+                
+            try:
+                top, top_left, top_right, bottom, bottom_left, bottom_right, left, right, borderx, bordery = check_AOB(width, height, ascii, x, y)
 
                 if ascii[y][x] == '/': # slope
                     # Chek if slope is in wall
@@ -400,39 +430,47 @@ def ascii_to_vector(width, height, ascii_art):
                         slope_orientation = "right"# slope is oriented to the right = /
                     if slope_orientation == "left":
                         if bottom_right != "/":
-                            points_list.append([x+1, y+1])
+                            points_list_sl.append([x+1, y+1])
                         if top_left != "/":
-                            points_list.append([x, y])
+                            points_list_sl.append([x, y])
                     elif slope_orientation == "right":
                         if top_right != "/":
-                            points_list.append([x+1, y])
+                            points_list_sr.append([x+1, y])
                         if bottom_left != "/":
-                            points_list.append([x, y+1])
+                            points_list_sr.append([x, y+1])
             except:
-                print("error in ascii to vector, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
+                print("error in ascii to vector for the slope, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
     try:
-        points_list = list(set(map(tuple, points_list)))
+        points_list_sl = list(set(map(tuple, points_list_sl)))
     except:
-        print("error in points_list")
+        print("error in points_list_sl")
     try:
-        points_list.sort()
+        points_list_sl.sort()
     except:
-        print("error sorting points_list")
-    print(points_list)
-    return points_list
+        print("error sorting points_list_sl")
+    try:
+        points_list_sr = list(set(map(tuple, points_list_sr)))
+    except:
+        print("error in points_list_sr")
+    try:
+        points_list_sr.sort()
+    except:
+        print("error sorting points_list_sr")
+    return points_list_sl, points_list_sr
 
-def invert_list_in_list(points_list):
-    return [(y, x) for x, y in points_list]
 
-def points_to_vector(points_list):
+def invert_list_in_list(points_list_w):
+    return [(y, x) for x, y in points_list_w]
+
+def points_to_vector(points_list_w):
     v_vector_list = []
-    for i in range(0,len(points_list)-1,2):
-        v_vector_list.append([points_list[i], points_list[i+1]])
-    points_list = invert_list_in_list(points_list)
-    points_list.sort()
+    for i in range(0,len(points_list_w)-1,2):
+        v_vector_list.append([points_list_w[i], points_list_w[i+1]])
+    points_list_w = invert_list_in_list(points_list_w)
+    points_list_w.sort()
     h_vector_list = []
-    for i in range(0,len(points_list)-1,2):
-        h_vector_list.append([(points_list[i][1], points_list[i][0]), (points_list[i+1][1], points_list[i+1][0])])
+    for i in range(0,len(points_list_w)-1,2):
+        h_vector_list.append([(points_list_w[i][1], points_list_w[i][0]), (points_list_w[i+1][1], points_list_w[i+1][0])])
     return v_vector_list, h_vector_list
 
 
@@ -459,12 +497,12 @@ def run(root, file):
         with open(output_file, 'a') as f:
             print("Erreur dans le fichier ou les dimensions.")
     try:
-        points_list = ascii_to_vector(width, height, ascii_art)
+        points_list_w = ascii_to_vector_wall(width, height, ascii_art)
     except:
         print("ascii to vector error")
 
     try:
-        v_vector_list, h_vector_list = points_to_vector(points_list)
+        v_vector_list, h_vector_list = points_to_vector(points_list_w)
     except:
         print("points to vector error")
 
@@ -477,10 +515,10 @@ def run(root, file):
             f.write(f"taille : {width}x{height}\n")
             f.write(ascii_art + "\n")
             try:
-                for i in range(len(points_list)):
-                    f.write(str(points_list[i][0]))
+                for i in range(len(points_list_w)):
+                    f.write(str(points_list_w[i][0]))
                     f.write(",")
-                    f.write(str(points_list[i][1]))
+                    f.write(str(points_list_w[i][1]))
                     f.write("|")
                 f.write("\n")
             except:
