@@ -320,27 +320,69 @@ def ascii_to_vector(width, height, ascii_art):
                     if bottom:
                         bottom_right = ascii[y+1][x+1]
 
-                #print(top, top_left, top_right, bottom, bottom_left, bottom_right, right, left)
-
                 if ascii[y][x] == '#': # wall
                     # Check if the wall corner are points inter angle
-                    if right == '#' and bottom == '#' and bottom_right == '.': 
+                    if {right, bottom} == {'#'} and bottom_right in {'.', '='}:
                         points_list.append([x+1, y+1])# bottom right corner of the wall is a point
-                    if right == '#' and top == '#' and top_right == '.': 
+                    if {right, top} == {'#'} and top_right in {'.', '='}:
                         points_list.append([x+1, y])# top right corner of the wall is a point
-                    if left == '#' and bottom == '#' and bottom_left == '.': 
+                    if {left, bottom} == {'#'} and bottom_left in {'.', '='}:
                         points_list.append([x, y+1])# bottom left corner of the wall is a point
-                    if left == '#' and top == '#' and top_left == '.': 
+                    if {left, top} == {'#'} and top_left in {'.', '='}:
                         points_list.append([x, y])# top left corner of the wall is a point
                     # Check if the wall corner are points outer angle
-                    if right == '.' and bottom == '.' and bottom_right == '.': 
+                    if {right, bottom, bottom_right} <= {'.', '='}:
                         points_list.append([x+1, y+1])# bottom right corner of the wall is a point
-                    if right == '.' and top == '.' and top_right == '.': 
+                    if {right, top, top_right} <= {'.', '='}:
                         points_list.append([x+1, y])# top right corner of the wall is a point
-                    if left == '.' and bottom == '.' and bottom_left == '.': 
+                    if {left, bottom, bottom_left} <= {'.', '='}:
                         points_list.append([x, y+1])# bottom left corner of the wall is a point
-                    if left == '.' and top == '.' and top_left == '.': 
+                    if {left, top, top_left} <= {'.', '='}:
                         points_list.append([x, y])# top left corner of the wall is a point
+                    # Check for corner in map border
+                    if borderx == "left" and bordery == None:
+                        if top == ".":
+                            points_list.append([x, y])
+                        if bottom == ".": 
+                            points_list.append([x, y+1])
+                    elif borderx == "right" and bordery == None:
+                        if top == ".": 
+                            points_list.append([x+1, y])
+                        if bottom == ".": 
+                            points_list.append([x+1, y+1])
+
+                    if bordery == "top" and borderx == None:
+                        if left == ".":
+                            points_list.append([x, y])
+                        if right == ".": 
+                            points_list.append([x+1, y])
+                    elif bordery == "bottom" and borderx == None:
+                        if left == ".": 
+                            points_list.append([x, y+1])
+                        if right == ".": 
+                            points_list.append([x+1, y+1])
+                    
+                    if borderx == "left" and bordery == "top":
+                        if right == ".":
+                            points_list.append([x+1, y])
+                        if bottom == ".": 
+                            points_list.append([x, y+1])
+                    elif borderx == "right" and bordery == "top":
+                        if left == ".": 
+                            points_list.append([x, y])
+                        if bottom == ".": 
+                            points_list.append([x+1, y+1])
+                    elif borderx == "left" and bordery == "bottom":
+                        if right == ".": 
+                            points_list.append([x+1, y+1])
+                        if top == ".": 
+                            points_list.append([x, y])
+                    elif borderx == "right" and bordery == "bottom":
+                        if left == ".": 
+                            points_list.append([x, y+1])
+                        if top == ".": 
+                            points_list.append([x+1, y])
+
                 if ascii[y][x] == '/': # slope
                     # Chek if slope is in wall
                     if bottom == '#' and right == '#' and top == '#' and left == '#':
@@ -368,16 +410,31 @@ def ascii_to_vector(width, height, ascii_art):
                             points_list.append([x, y+1])
             except:
                 print("error in ascii to vector, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
-    # try make it work if needed (multiple points have the same coordinates)
     try:
-        for i in range(len(points_list)):
-            for j in range(len(points_list)):
-                if points_list[i][0] == points_list[j][0] and points_list[i][1] == points_list[j][1]:
-                    points_list.pop(j)
+        points_list = list(set(map(tuple, points_list)))
     except:
         print("error in points_list")
+    try:
+        points_list.sort()
+    except:
+        print("error sorting points_list")
     print(points_list)
     return points_list
+
+def invert_list_in_list(points_list):
+    return [(y, x) for x, y in points_list]
+
+def points_to_vector(points_list):
+    v_vector_list = []
+    for i in range(0,len(points_list)-1,2):
+        v_vector_list.append([points_list[i], points_list[i+1]])
+    points_list = invert_list_in_list(points_list)
+    points_list.sort()
+    h_vector_list = []
+    for i in range(0,len(points_list)-1,2):
+        h_vector_list.append([(points_list[i][1], points_list[i][0]), (points_list[i+1][1], points_list[i+1][0])])
+    return v_vector_list, h_vector_list
+
 
 def run(root, file):
     spe_file_path = os.path.join(root, file)
@@ -407,6 +464,11 @@ def run(root, file):
         print("ascii to vector error")
 
     try:
+        v_vector_list, h_vector_list = points_to_vector(points_list)
+    except:
+        print("points to vector error")
+
+    try:
         relative_path = os.path.relpath(root, file_path)
         writing_file = os.path.join(file2_path, relative_path, file)
         open(writing_file, 'w').close()
@@ -420,8 +482,38 @@ def run(root, file):
                     f.write(",")
                     f.write(str(points_list[i][1]))
                     f.write("|")
+                f.write("\n")
             except:
                 print("error will writing points list")
+            try:
+                for i in range(len(v_vector_list)):
+                    f.write("(")
+                    f.write(str(v_vector_list[i][0][0]))
+                    f.write(",")
+                    f.write(str(v_vector_list[i][0][1]))
+                    f.write("),(")
+                    f.write(str(v_vector_list[i][1][0]))
+                    f.write(",")
+                    f.write(str(v_vector_list[i][1][1]))
+                    f.write(")")
+                    f.write("|")
+                f.write("\n")
+            except:
+                print("error will writing v vector list")
+            try:
+                for i in range(len(h_vector_list)):
+                    f.write("(")
+                    f.write(str(h_vector_list[i][0][0]))
+                    f.write(",")
+                    f.write(str(h_vector_list[i][0][1]))
+                    f.write("),(")
+                    f.write(str(h_vector_list[i][1][0]))
+                    f.write(",")
+                    f.write(str(h_vector_list[i][1][1]))
+                    f.write(")")
+                    f.write("|")
+            except:
+                print("error will writing h vector list")
 
     except:
         print("error will writing outputs files")
