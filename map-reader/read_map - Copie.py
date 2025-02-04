@@ -241,44 +241,44 @@ def ascii_to_vector_wall(width, height, ascii_art):
 
                 if ascii[y][x] == '#': # wall
                     # Check if the wall corner are points inter angle
-                    if {right, bottom} == {'#'} and bottom_right in {'.', '='}:
+                    if {right, bottom} == {'#'} and bottom_right in {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
-                    if {right, top} == {'#'} and top_right in {'.', '='}:
+                    if {right, top} == {'#'} and top_right in {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x+1, y])# top right corner of the wall is a point
-                    if {left, bottom} == {'#'} and bottom_left in {'.', '='}:
+                    if {left, bottom} == {'#'} and bottom_left in {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x, y+1])# bottom left corner of the wall is a point
-                    if {left, top} == {'#'} and top_left in {'.', '='}:
+                    if {left, top} == {'#'} and top_left in {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x, y])# top left corner of the wall is a point
                     # Check if the wall corner are points outer angle
-                    if {right, bottom, bottom_right} <= {'.', '='}:
+                    if {right, bottom, bottom_right} <= {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
-                    if {right, top, top_right} <= {'.', '='}:
+                    if {right, top, top_right} <= {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x+1, y])# top right corner of the wall is a point
-                    if {left, bottom, bottom_left} <= {'.', '='}:
+                    if {left, bottom, bottom_left} <= {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x, y+1])# bottom left corner of the wall is a point
-                    if {left, top, top_left} <= {'.', '='}:
+                    if {left, top, top_left} <= {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x, y])# top left corner of the wall is a point
                     # Check for corner in map border
                     if borderx == "left" and bordery == None:
-                        if top == ".":
+                        if top in {'.', '=', '+', 'H', '|', '-'}:
                             points_list_w.append([x, y])
-                        if bottom == ".": 
+                        if bottom in {'.', '=', '+', 'H', '|', '-'}: 
                             points_list_w.append([x, y+1])
                     elif borderx == "right" and bordery == None:
-                        if top == ".": 
+                        if top in {'.', '=', '+', 'H', '|', '-'}: 
                             points_list_w.append([x+1, y])
-                        if bottom == ".": 
+                        if bottom in {'.', '=', '+', 'H', '|', '-'}: 
                             points_list_w.append([x+1, y+1])
 
                     if bordery == "top" and borderx == None:
-                        if left == ".":
+                        if left in {'.', '=', '+', 'H', '|', '-'}:
                             points_list_w.append([x, y])
-                        if right == ".": 
+                        if right in {'.', '=', '+', 'H', '|', '-'}: 
                             points_list_w.append([x+1, y])
                     elif bordery == "bottom" and borderx == None:
-                        if left == ".": 
+                        if left in {'.', '=', '+', 'H', '|', '-'}: 
                             points_list_w.append([x, y+1])
-                        if right == ".": 
+                        if right in {'.', '=', '+', 'H', '|', '-'}: 
                             points_list_w.append([x+1, y+1])
                     
                     if borderx == "left" and bordery == "top":
@@ -325,9 +325,9 @@ def ascii_to_vector_slope(width, height, ascii_art):
 
                 if ascii[y][x] == '/': # slope
                     # Chek if slope is in wall
-                    if bottom == '#' and right == '#' and top == '#' and left == '#':
-                        print("slope in wall")
-                        pass
+                    #if bottom == '#' and right == '#' and top == '#' and left == '#':
+                    if sum(value in {"/", "#"} for value in (bottom, top, left, right)) >=3:
+                        continue
                     slope_orientation = None
                     # Check the slope orientation and if near other slope
                     if right == "#" and bottom == "#":
@@ -368,6 +368,48 @@ def ascii_to_vector_slope(width, height, ascii_art):
         print("error sorting points_list_sr")
     return points_list_sl, points_list_sr
 
+def ascii_to_vector_pole(width, height, ascii_art):
+    points_list_pv = []
+    points_list_ph = []
+    ascii = string_to_dict(ascii_art)
+    for y in range(height):
+        for x in range(width):
+                
+            try:
+                top, top_left, top_right, bottom, bottom_left, bottom_right, left, right, borderx, bordery = check_AOB(width, height, ascii, x, y)
+
+                if ascii[y][x] == '|': # vertical pole
+                    #Check if there's a pole on top or bottom
+                    if top not in {"|", "+"}:
+                        points_list_pv.append([x+0.5, y])
+                    if bottom not in {"|", "+"}:
+                        points_list_pv.append([x+0.5, y+1])
+                elif ascii[y][x] == '-': # horizontal pole
+                    #Check if there's a pole on left or right
+                    if left not in {"-", "+"}:
+                        points_list_ph.append([x, y+0.5])
+                    if right not in {"-", "+"}:
+                        points_list_ph.append([x+1, y+0.5])
+            except:
+                print("error in ascii to vector for the pole, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
+    try:
+        points_list_pv = list(set(map(tuple, points_list_pv)))
+    except:
+        print("error in points_list_pv")
+    try:
+        points_list_pv.sort()
+    except:
+        print("error sorting points_list_pv")
+    try:
+        points_list_ph = list(set(map(tuple, points_list_ph)))
+    except:
+        print("error in points_list_ph")
+    try:
+        points_list_ph.sort()
+    except:
+        print("error sorting points_list_ph")
+    return points_list_pv, points_list_ph
+
 def invert_list_in_list(points_list_w):
     return [(y, x) for x, y in points_list_w]
 
@@ -399,6 +441,15 @@ def points_to_vector_s(points_list_sl, points_list_sr):
                     checked.add(j)
                     vector_list_sr.append([points_list_sr[i], points_list_sr[j]])
     return vector_list_sl, vector_list_sr
+
+def points_to_vector_p(points_list_pv, points_list_ph):
+    vector_list_pv = []
+    for i in range (0, len(points_list_pv)-1, 2):
+        vector_list_pv.append([points_list_pv[i], points_list_pv[i+1]])
+    vector_list_ph = []
+    for i in range (0, len(points_list_ph)-1, 2):
+        vector_list_ph.append([points_list_ph[i], points_list_ph[i+1]])
+    return vector_list_pv, vector_list_ph
 
 def write_vector_list(f, vector_list):
     if vector_list:
@@ -437,11 +488,19 @@ def run(root, file):
     except:
         print("ascii to points slope error")
     try:
+        points_list_pv, points_list_ph = ascii_to_vector_pole(width, height, ascii_art)
+    except:
+        print("ascii to points pole error")
+    try:
         v_vector_list, h_vector_list = points_to_vector_w(points_list_w)
     except:
         print("points wall to vector error")
     try:
         vector_list_sl, vector_list_sr = points_to_vector_s(points_list_sl, points_list_sr)
+    except:
+        print("points slope to vector error")
+    try:
+        vector_list_pv, vector_list_ph = points_to_vector_p(points_list_pv, points_list_ph)
     except:
         print("points slope to vector error")
 
@@ -467,7 +526,15 @@ def run(root, file):
             try:
                 write_vector_list(f, vector_list_sr)
             except:
-                print("error will writing hsr vector list")
+                print("error will writing sr vector list")
+            try:
+                write_vector_list(f, vector_list_pv)
+            except:
+                print("error will writing pv vector list")
+            try:
+                write_vector_list(f, vector_list_ph)
+            except:
+                print("error will writing ph vector list")
 
     except:
         print("error will writing outputs files")
