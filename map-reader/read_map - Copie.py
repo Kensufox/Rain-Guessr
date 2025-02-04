@@ -427,47 +427,19 @@ def run(root, file):
     try:
         relative_path = os.path.relpath(root, file_path)
         writing_file = os.path.join(file2_path, relative_path, file)
-        open(writing_file, 'w').close()
-        with open(writing_file, 'a') as f:
+        with open(writing_file, 'w') as f:
             f.write(f"Pièce : {room_name}\n")
             f.write(f"taille : {width}x{height}\n")
             f.write(ascii_art + "\n")
             try:
-                for i in range(len(points_list_w)):
-                    f.write(str(points_list_w[i][0]))
-                    f.write(",")
-                    f.write(str(points_list_w[i][1]))
-                    f.write("|")
-                f.write("\n")
-            except:
-                print("error will writing points list")
-            try:
                 for i in range(len(v_vector_list)):
-                    f.write("(")
-                    f.write(str(v_vector_list[i][0][0]))
-                    f.write(",")
-                    f.write(str(v_vector_list[i][0][1]))
-                    f.write("),(")
-                    f.write(str(v_vector_list[i][1][0]))
-                    f.write(",")
-                    f.write(str(v_vector_list[i][1][1]))
-                    f.write(")")
-                    f.write("|")
+                    f.write("(" + str(v_vector_list[i][0][0]) + "," + str(v_vector_list[i][0][1]) + "),(" + str(v_vector_list[i][1][0]) + "," + str(v_vector_list[i][1][1]) + ")|")
                 f.write("\n")
             except:
                 print("error will writing v vector list")
             try:
                 for i in range(len(h_vector_list)):
-                    f.write("(")
-                    f.write(str(h_vector_list[i][0][0]))
-                    f.write(",")
-                    f.write(str(h_vector_list[i][0][1]))
-                    f.write("),(")
-                    f.write(str(h_vector_list[i][1][0]))
-                    f.write(",")
-                    f.write(str(h_vector_list[i][1][1]))
-                    f.write(")")
-                    f.write("|")
+                    f.write("(" + str(h_vector_list[i][0][0]) + "," + str(h_vector_list[i][0][1]) + "),(" + str(h_vector_list[i][1][0]) + "," + str(h_vector_list[i][1][1]) + ")|")
             except:
                 print("error will writing h vector list")
 
