@@ -40,202 +40,120 @@ def render_ascii_art(width, height, geometry_data):
     cell = 0
     list_error = []
 
+    # Mapping of specific geometry strings to cell values
+    geometry_map = {
+    "1,4,3": 1,
+    "0,3,6": 0,
+    "0,3,1,6": 3,
+    "0,1,6": 3,
+    "4,3,6": 4,
+    "0,2,6": 5,
+    "0,1,2": 6,
+    "0,1,2,6": 6,
+    "3,1,6": 7,
+    "1,9,3": 1,
+    "0,2,1": 6,
+    "0,7,6": 0,
+    "0,1,7,6": 3,
+    "1,5,3": 1,
+    "0,4,3,6": 0,
+    "2,3,6": 2,
+    "0,3,2,6": 5,
+    "0,1,3,6": 3,
+    "0,3,7,6": 0,
+    "0,2,1,6": 6,
+    "0,2,3,6": 5,
+    "0,1,7": 3,
+    "0,2,1,3,6": 6,
+    "1,12,3": 1,
+    "0,1,2,3,6": 6,
+    "4,6,3": 1,
+    "0,6,7": 0,
+    "1,3,9": 1,
+    "0,6,1": 3,
+    "3,6,1": 7,
+    "1,3,4": 1,
+    "1,3,12": 1,
+    "0,6,2": 5,
+    "0,6,3": 0,
+    "0,6,1,3": 3,
+    "1,3,5": 1,
+    "4,3,1,2,6": 4,
+    "3,2,6": 7,
+    "3,1,2,6": 7,
+    "0,1,3": 3,
+    "0,1,3,2,6": 6,
+    "0,3,1,2,6": 6,
+    "3,3,6": 7,
+    "2,1,6": 2,
+    "0,8,6": 0,
+    "2,2,6": 2,
+    "3,2,1,6": 7,
+    "0,7,1,6": 3,
+    "0,11,6": 0,
+    "0,1,11,6": 3,
+    "0,4,3": 0,
+    "0,2,3": 5,
+    "0,9,3": 0,
+    "3,1,3,6": 7,
+    "0,3,11,6": 0,
+    "4,3,1,6": 1,
+    "1,3": 1,
+    "0,6": 0,
+    "0,1": 3,
+    "3,6": 1,
+    "0,2": 5,
+    "2,6": 2,
+    "1,10": 1,
+    "0,7": 0,
+    "0,3": 0,
+    "2,1": 2,
+    "3,1": 7,
+    "4,3": 1,
+    "0,8": 1,
+    "0,11": 1,
+    "3,2": 7,
+    "2,2": 2,
+    "2,3": 2,
+    "4,3,2,6": 5,
+    "4,3,1,3,6": 1,
+    "4,3,3,6": 4,
+    "0,11,1": 1,
+    "0,1,11": 3,
+    "4,3,1": 1,
+    "4,6,1,3": 1,
+    "0,6,1,2": 6,
+    "2,6,1": 2,
+    "0,7,1": 1,
+    "0,8,1,6": 3,
+    "0,1,8,6": 3,
+    "0,2,8,6": 5,
+    "4,3,2": 1,
+    "4,3,2,1,6": 1,
+    "0,7,3,6": 0,
+    "0,6,11": 0,
+    "0,3,2": 0,
+    "13": 7,
+    "11": 6
+        }
+
+    # Looping through the geometry_data
     for y in range(height):
         for x in range(width):
-            if len(geometry_data[y+(x*height)]) == 1:
-                cell = float(geometry_data[y+(x*height)].replace(",", "."))
+            key = geometry_data[y + (x * height)]
+        
+            # If it's a single value, convert it to a float
+            if len(key) == 1:
+                cell = float(key.replace(",", "."))
             else:
-                cell = -1
+                # Look up the cell value in the dictionary, default to -1 if not found
+                cell = geometry_map.get(key, -1)
+        
+            # If the cell value is -1, log the error
+            if cell == -1:
+                list_error.append(key)
+                print(key)
 
-                if geometry_data[y+(x*height)] == "1,4,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,3,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,3,1,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,1,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "4,3,6":
-                    cell = 4
-                elif geometry_data[y+(x*height)] == "0,2,6":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "0,1,2":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "0,1,2,6":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "3,1,6":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "1,9,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,2,1":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "0,7,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,1,7,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "1,5,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,4,3,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "2,3,6":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "0,3,2,6":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "0,1,3,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,3,7,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,2,1,6":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "0,2,3,6":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "0,1,7":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,2,1,3,6":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "1,12,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,1,2,3,6":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "4,6,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,6,7":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "1,3,9":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,6,1":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "3,6,1":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "1,3,4":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "1,3,12":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,6,2":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "0,6,3":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,6,1,3":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "1,3,5":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "4,3,1,2,6":
-                    cell = 4
-                elif geometry_data[y+(x*height)] == "3,2,6":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "3,1,2,6":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "0,1,3":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,1,3,2,6":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "0,3,1,2,6":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "3,3,6":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "2,1,6":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "0,8,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "2,2,6":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "3,2,1,6":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "0,7,1,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,11,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,1,11,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,4,3":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,2,3":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "0,9,3":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "3,1,3,6":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "0,3,11,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "4,3,1,6":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "1,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,1":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "3,6":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,2":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "2,6":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "1,10":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,7":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,3":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "2,1":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "3,1":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "4,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,8":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,11":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "3,2":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "2,2":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "2,3":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "4,3,2,6":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "4,3,1,3,6":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "4,3,3,6":
-                    cell = 4
-                elif geometry_data[y+(x*height)] == "0,11,1":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,1,11":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "4,3,1":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "4,6,1,3":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,6,1,2":
-                    cell = 6
-                elif geometry_data[y+(x*height)] == "2,6,1":
-                    cell = 2
-                elif geometry_data[y+(x*height)] == "0,7,1":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,8,1,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,1,8,6":
-                    cell = 3
-                elif geometry_data[y+(x*height)] == "0,2,8,6":
-                    cell = 5
-                elif geometry_data[y+(x*height)] == "4,3,2":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "4,3,2,1,6":
-                    cell = 1
-                elif geometry_data[y+(x*height)] == "0,7,3,6":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,6,11":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "0,3,2":
-                    cell = 0
-                elif geometry_data[y+(x*height)] == "13":
-                    cell = 7
-                elif geometry_data[y+(x*height)] == "11":
-                    cell = 6
-            if cell == -1:  
-                list_error.append(geometry_data[y+(x*height)])
-                print(geometry_data[y+(x*height)])
 
             if cell == 0:
                 grid[y][x] = '.'  # air
