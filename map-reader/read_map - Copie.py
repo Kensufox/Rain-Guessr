@@ -400,6 +400,12 @@ def points_to_vector_s(points_list_sl, points_list_sr):
                     vector_list_sr.append([points_list_sr[i], points_list_sr[j]])
     return vector_list_sl, vector_list_sr
 
+def write_vector_list(f, vector_list):
+    if vector_list:
+        for i in range(len(vector_list)):
+            f.write(f"({vector_list[i][0][0]},{vector_list[i][0][1]}),({vector_list[i][1][0]},{vector_list[i][1][1]})|")
+    f.write("\n")
+
 def run(root, file):
     spe_file_path = os.path.join(root, file)
     # Lecture et rendu de la pièce
@@ -436,7 +442,6 @@ def run(root, file):
         print("points wall to vector error")
     try:
         vector_list_sl, vector_list_sr = points_to_vector_s(points_list_sl, points_list_sr)
-        print(vector_list_sl, vector_list_sr)
     except:
         print("points slope to vector error")
 
@@ -448,24 +453,19 @@ def run(root, file):
             f.write(f"taille : {width}x{height}\n")
             f.write(ascii_art + "\n")
             try:
-                for i in range(len(v_vector_list)):
-                    f.write("(" + str(v_vector_list[i][0][0]) + "," + str(v_vector_list[i][0][1]) + "),(" + str(v_vector_list[i][1][0]) + "," + str(v_vector_list[i][1][1]) + ")|")
-                f.write("\n")
+                write_vector_list(f, v_vector_list)
             except:
                 print("error will writing v vector list")
             try:
-                for i in range(len(h_vector_list)):
-                    f.write("(" + str(h_vector_list[i][0][0]) + "," + str(h_vector_list[i][0][1]) + "),(" + str(h_vector_list[i][1][0]) + "," + str(h_vector_list[i][1][1]) + ")|")
+                write_vector_list(f, h_vector_list)
             except:
                 print("error will writing h vector list")
             try:
-                for i in range(len(vector_list_sl)):
-                    f.write("(" + str(vector_list_sl[i][0][0]) + "," + str(vector_list_sl[i][0][1]) + "),(" + str(vector_list_sl[i][1][0]) + "," + str(vector_list_sl[i][1][1]) + ")|")
+                write_vector_list(f, vector_list_sl)
             except:
                 print("error will writing sl vector list")
             try:
-                for i in range(len(vector_list_sr)):
-                    f.write("(" + str(vector_list_sr[i][0][0]) + "," + str(vector_list_sr[i][0][1]) + "),(" + str(vector_list_sr[i][1][0]) + "," + str(vector_list_sr[i][1][1]) + ")|")
+                write_vector_list(f, vector_list_sr)
             except:
                 print("error will writing hsr vector list")
 
