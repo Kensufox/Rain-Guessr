@@ -179,13 +179,6 @@ def render_ascii_art(width, height, geometry_data):
     ascii_art = '\n'.join(''.join(row) for row in grid)
     return ascii_art, list_error
 
-output_file = os.path.join(path, "output.txt")
-open(output_file, 'w').close()
-error_file = os.path.join(path, "error.txt")
-open(error_file, 'w').close()
-
-list_error = []
-
 def string_to_dict(string):
     string_lines = string.strip().split("\n")
     string_dict = [[] for _ in range(len(string_lines))]
@@ -236,7 +229,6 @@ def check_AOB(width, height, ascii, x, y):
         print("error while trying to check AOB")
 
     return top, top_left, top_right, bottom, bottom_left, bottom_right, left, right, borderx, bordery
-
 
 def ascii_to_vector_wall(width, height, ascii_art):
     points_list_w = []
@@ -376,21 +368,37 @@ def ascii_to_vector_slope(width, height, ascii_art):
         print("error sorting points_list_sr")
     return points_list_sl, points_list_sr
 
-
 def invert_list_in_list(points_list_w):
     return [(y, x) for x, y in points_list_w]
 
-def points_to_vector(points_list_w):
-    v_vector_list = []
-    for i in range(0,len(points_list_w)-1,2):
-        v_vector_list.append([points_list_w[i], points_list_w[i+1]])
-    points_list_w = invert_list_in_list(points_list_w)
-    points_list_w.sort()
-    h_vector_list = []
-    for i in range(0,len(points_list_w)-1,2):
-        h_vector_list.append([(points_list_w[i][1], points_list_w[i][0]), (points_list_w[i+1][1], points_list_w[i+1][0])])
+def points_to_vector_w(points_list_w):
+    v_vector_list = [[points_list_w[i], points_list_w[i+1]] for i in range(0, len(points_list_w)-1, 2)]
+    sorted_points = sorted(invert_list_in_list(points_list_w))
+    h_vector_list = [[(p1[1], p1[0]), (p2[1], p2[0])] for p1, p2 in zip(sorted_points[::2], sorted_points[1::2])]
     return v_vector_list, h_vector_list
 
+def points_to_vector_s(points_list_sl, points_list_sr):
+    #loop for the left slope
+    vector_list_sl = []
+    checked = set()
+    for i in range(len(points_list_sl)):
+        if i not in checked:
+            for j in range(len(points_list_sl)):
+                if i != j and (points_list_sl[i][0] - points_list_sl[i][1]) == (points_list_sl[j][0] - points_list_sl[j][1]):
+                    checked.add(i)
+                    checked.add(j)
+                    vector_list_sl.append([points_list_sl[i], points_list_sl[j]])
+    #loop for the right slope
+    vector_list_sr = []
+    checked = set() 
+    for i in range(len(points_list_sr)):
+        if i not in checked:
+            for j in range(len(points_list_sr)):
+                if i != j and (points_list_sr[i][0] + points_list_sr[i][1]) == (points_list_sr[j][0] + points_list_sr[j][1]):
+                    checked.add(i)
+                    checked.add(j)
+                    vector_list_sr.append([points_list_sr[i], points_list_sr[j]])
+    return vector_list_sl, vector_list_sr
 
 def run(root, file):
     spe_file_path = os.path.join(root, file)
@@ -417,12 +425,20 @@ def run(root, file):
     try:
         points_list_w = ascii_to_vector_wall(width, height, ascii_art)
     except:
-        print("ascii to vector error")
-
+        print("ascii to points wallerror")
     try:
-        v_vector_list, h_vector_list = points_to_vector(points_list_w)
+        points_list_sl, points_list_sr = ascii_to_vector_slope(width, height, ascii_art)
     except:
-        print("points to vector error")
+        print("ascii to points slope error")
+    try:
+        v_vector_list, h_vector_list = points_to_vector_w(points_list_w)
+    except:
+        print("points wall to vector error")
+    try:
+        vector_list_sl, vector_list_sr = points_to_vector_s(points_list_sl, points_list_sr)
+        print(vector_list_sl, vector_list_sr)
+    except:
+        print("points slope to vector error")
 
     try:
         relative_path = os.path.relpath(root, file_path)
@@ -442,9 +458,26 @@ def run(root, file):
                     f.write("(" + str(h_vector_list[i][0][0]) + "," + str(h_vector_list[i][0][1]) + "),(" + str(h_vector_list[i][1][0]) + "," + str(h_vector_list[i][1][1]) + ")|")
             except:
                 print("error will writing h vector list")
+            try:
+                for i in range(len(vector_list_sl)):
+                    f.write("(" + str(vector_list_sl[i][0][0]) + "," + str(vector_list_sl[i][0][1]) + "),(" + str(vector_list_sl[i][1][0]) + "," + str(vector_list_sl[i][1][1]) + ")|")
+            except:
+                print("error will writing sl vector list")
+            try:
+                for i in range(len(vector_list_sr)):
+                    f.write("(" + str(vector_list_sr[i][0][0]) + "," + str(vector_list_sr[i][0][1]) + "),(" + str(vector_list_sr[i][1][0]) + "," + str(vector_list_sr[i][1][1]) + ")|")
+            except:
+                print("error will writing hsr vector list")
 
     except:
         print("error will writing outputs files")
+
+output_file = os.path.join(path, "output.txt")
+open(output_file, 'w').close()
+error_file = os.path.join(path, "error.txt")
+open(error_file, 'w').close()
+
+list_error = []
 
 for root, dirs, files in os.walk(file_path):
     for file in files:
