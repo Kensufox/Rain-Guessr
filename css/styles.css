@@ -44,7 +44,9 @@ h1{
   align-items: center;
   justify-content: center;
   margin: 0px;
-  height: auto;
+  padding: 0px;
+  line-height: 200px;
+  height: fit-content;
   width: auto;
 }
 
@@ -55,14 +57,7 @@ h1{
   background-size: cover;
 }
 
-nav {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /*padding-bottom: 1200px;*/
-}
-
-a, p {
+a {
   color: #fff;;
   font-size: 30px;
   font-weight: bold;
@@ -96,26 +91,30 @@ button {
   background-color: transparent;
 }
 
+li {
+  margin: 0px;
+  padding: 0px;
+  letter-spacing: 1px;
+}
+
+h6 {
+  margin: 0px;
+  padding: 0px;
+}
+
 footer {
-  flex: 1 1 auto;
-  display: flex;
-  justify-content: space-evenly;
-  flex-wrap: wrap;
-  align-items: center;
-  min-height: 110px;
-  width: 80%;
+  width: 100%;
+  height: 7%;
   background: #bababa8c;
-  padding: 0px 10% 0px 10%;
   transition: all 1s ease-in-out;
 }
 
-footer aside{
+aside{
   display: flex;
   position: relative;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  width: 100%;
 }
 
 @media screen and (orientation: portrait) {
@@ -162,12 +161,12 @@ footer aside{
 
 /* Cette balise fait marcher le scrollbar pour firefox mais les balises suivantes ne marcheront pas
 mais cela rends la scroll bar moins esthetique*/
+/*
 *{
   scrollbar-width: thin;
   scrollbar-color: #1e67e5 #DFE9EB;
 }
 
-/* Chrome, Edge and Safari */
 *::-webkit-scrollbar {
   height: 12px;
   width: 13px;
@@ -191,3 +190,4 @@ mais cela rends la scroll bar moins esthetique*/
 *::-webkit-scrollbar-thumb:active {
 background-color: #1e67e5;
 }
+*/
