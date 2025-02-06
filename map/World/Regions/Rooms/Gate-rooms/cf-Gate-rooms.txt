@@ -1,3 +1,4 @@
+cf-Gate-rooms.txt
 gate_cc_uw.txt
 gate_ds_gw.txt
 gate_ds_sb.txt

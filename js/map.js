@@ -1,30 +1,33 @@
 let gl;
 
+// Wait until the DOM (HTML Document) is loaded
 window.addEventListener("DOMContentLoaded", () => {
-    console.log("Initialisation de WebGL...");
+    console.log("Initialisation of WebGL...");
     
+    //try yo load the canvas to draw (the line) on the page
     let canvas = document.querySelector("#canvas");
     if (!canvas) {
-        console.error("Erreur : Impossible de trouver l'élément <canvas>.");
+        console.error("Error : Impossible to find the canvas");
         return;
     }
-
+    //try to get the webgl context
     gl = canvas.getContext("webgl");
     if (!gl) {
-        console.error("Erreur : Impossible d'initialiser WebGL.");
+        console.error("Error : Impossible to initialize Webgl");
         return;
     }
 
-    gl.enable(gl.BLEND);
+    gl.enable(gl.BLEND); //enable transparent color
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.SRC_ALPHA, gl.ONE);
-    console.log("WebGL initialisé avec succès !");
+    console.log("WebGL initialize with success !");
 });
 
 let map_path = "../map/World/Regions/Rooms";
 let rooms = {}; // Stocke les salles par région
 
-console.log("Début du chargement des régions depuis :", map_path);
+console.log("Starting to load rooms map from :", map_path);
 
+// get the list of regions
 fetch(map_path + "/regions.txt")
     .then(response => response.text())
     .then(async function(data) {
@@ -34,66 +37,73 @@ fetch(map_path + "/regions.txt")
             fetch(map_path + "/" + region + "/cf-" + region + ".txt")
                 .then(response => response.text())
                 .then(data => {
-                    rooms[region] = data.split("\n").map(room => room.trim());
+                    rooms[region] = data.split("\n").map(room => room.trim()); // store the list of rooms by region
                 })
-                .catch(error => console.error("Erreur lors du chargement des salles pour " + region, error))
+                .catch(error => console.error("Error while loading of rooms for region" + region, error))
         );
 
-        // Attendre que toutes les requêtes soient terminées
+        // wait until all requests are done
         await Promise.all(fetchPromises);
 
-        // Après avoir récupéré les salles, afficher la première salle
-        let firstRegion = Object.keys(rooms)[0];  // Première région
-        let firstRoom = rooms[firstRegion][0];    // Première salle
+        // find the first region and first room
+        let firstRegion = Object.keys(rooms)[0];  // first region
+        let firstRoom = rooms[firstRegion][0];    // first room
 
-        console.log("Salle trouvée :", firstRoom);
+        console.log("Room found :", firstRoom);
 
         if (firstRoom.endsWith(".txt")) {
-            firstRoom = firstRoom.slice(0, -4); // Enlever ".txt" si déjà présent
+            firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if already present
         }
 
         if (firstRegion && firstRoom) {
-            console.log("Affichage de la première salle :", firstRoom);
+            console.log("Starting to load first room :", firstRoom);
             loadRoomGeometry(firstRegion, firstRoom);
         } else {
-          console.warn("Aucune salle trouvée !");
+          console.warn("No room found.");
         }
     })
-    .catch(error => console.error("Erreur lors du chargement des régions :", error));
+    .catch(error => console.error("Error while loading of room :", error));
 
 function loadRoomGeometry(region, room) {
     let roomPath = `${map_path}/${region}/${room}.txt`;
 
-    console.log(`Chargement des données de la salle ${room} dans la région ${region}...`);
+    console.log(`Loading the room ${room} in region ${region}...`);
 
     fetch(roomPath)
         .then(response => {
-            if (!response.ok) throw new Error(`Fichier introuvable : ${roomPath}`);
+            if (!response.ok) throw new Error(`Unfound file : ${roomPath}`);
             return response.text();
         })
         .then(data => {
-            //console.log(`Données brutes pour ${room}:`, data);
+            //console.log(`Raw data for ${room}:`, data);
             
-            // Convertir les données en géométrie utilisable
+            // Convert into useful geometry data
             let geometry = parseRoomGeometry(data);
-            console.log(`Données de géométrie pour ${room}:`, geometry);
+            console.log(`Geometry data for ${room}:`, geometry);
             
-            // Afficher la salle en WebGL
+            // Show room with WebGL
             renderRoom(geometry);
         })
-        .catch(error => console.error(`Erreur lors du chargement de la salle ${room} :`, error));
+        .catch(error => console.error(`Error while loading ${room} :`, error));
 }
     
 function parseRoomGeometry(data) {
     let lines = data.split("\n").map(line => line.trim()).filter(line => line !== "");
-    
+
+    // Get only the last 6 lines
+    let lastSixLines = lines.slice(-6);
+
     let vertices = [];
 
-    lines.forEach(line => {
-        let coords = line.split(",").map(num => parseFloat(num.trim()));
-        if (coords.length === 2) {  // Vérifier qu'il y a bien un couple (x, y)
-            vertices.push({ x: coords[0], y: coords[1] });
-        }
+    lastSixLines.forEach(line => {
+        let pairs = line.split("|").map(pair => pair.trim());
+
+        pairs.forEach(pair => {
+            let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
+            if (coords.length === 2) {  // Ensure (x, y) pairs
+                vertices.push({ x: coords[0], y: coords[1] });
+            }
+        });
     });
 
     return vertices;
@@ -101,16 +111,16 @@ function parseRoomGeometry(data) {
 
 function renderRoom(vertices) {
     if (!gl) {
-        console.error("Erreur WebGL : Impossible d'initialiser. `gl` est null !");
+        console.error("Error WebGL : Impossible to initialize. `gl` is null !");
         return;
     }
 
-    console.log("Rendu WebGL de la salle avec :", vertices.length, "points");
+    console.log("Webgl render of the room with :", vertices.length, "points");
 
     let vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 
-    let flatVertices = vertices.flatMap(v => [v.x, v.y]); // Transformer en tableau plat [x1, y1, x2, y2, ...]
+    let flatVertices = vertices.flatMap(v => [v.x, v.y]); // transform the vertices in [x1, y1, x2, y2, ...]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(flatVertices), gl.STATIC_DRAW);
 
     let vertexShaderSource = `

@@ -29,3 +29,4 @@ cc_s01.txt
 cc_s03.txt
 cc_s04.txt
 cc_s05.txt
+cf-CC-rooms.txt

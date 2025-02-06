@@ -1,3 +1,4 @@
+cf-SH-rooms.txt
 sh_a04.txt
 sh_a05.txt
 sh_a06.txt

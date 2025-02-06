@@ -1,4 +1,5 @@
 cc_s04.txt
+cf-gate shelters.txt
 ds_s03.txt
 gw_s03.txt
 gw_s04.txt

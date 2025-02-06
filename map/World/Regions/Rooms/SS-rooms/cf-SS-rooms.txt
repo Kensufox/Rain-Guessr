@@ -1,3 +1,4 @@
+cf-SS-rooms.txt
 ss_a01.txt
 ss_a03.txt
 ss_a04.txt

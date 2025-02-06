@@ -1,3 +1,4 @@
+cf-LF-rooms.txt
 lf_a01.txt
 lf_a02.txt
 lf_a03.txt

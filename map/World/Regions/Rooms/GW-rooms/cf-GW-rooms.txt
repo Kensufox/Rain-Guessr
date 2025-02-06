@@ -1,3 +1,4 @@
+cf-GW-rooms.txt
 gw_a01.txt
 gw_a04.txt
 gw_a05.txt

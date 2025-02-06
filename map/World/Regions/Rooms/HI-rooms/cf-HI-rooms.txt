@@ -1,3 +1,4 @@
+cf-HI-rooms.txt
 hi_a04.txt
 hi_a07.txt
 hi_a10.txt

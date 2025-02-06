@@ -1,3 +1,4 @@
+cf-SL-rooms.txt
 sl_a02.txt
 sl_a03.txt
 sl_a05.txt

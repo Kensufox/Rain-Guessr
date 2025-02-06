@@ -1,3 +1,4 @@
+cf-SB-rooms.txt
 sb_a01.txt
 sb_a02.txt
 sb_a03.txt

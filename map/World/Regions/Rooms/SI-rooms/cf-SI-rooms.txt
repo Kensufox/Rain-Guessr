@@ -1,3 +1,4 @@
+cf-SI-rooms.txt
 si_a02.txt
 si_a06.txt
 si_a07.txt

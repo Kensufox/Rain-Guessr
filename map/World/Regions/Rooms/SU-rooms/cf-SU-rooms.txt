@@ -1,3 +1,4 @@
+cf-SU-rooms.txt
 su_a02.txt
 su_a04.txt
 su_a06.txt
