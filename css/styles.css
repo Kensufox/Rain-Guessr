@@ -118,7 +118,7 @@ aside{
 }
 
 @media screen and (orientation: portrait) {
-  #toolbar {
+  .title {
     width: 100%;
   }
 }
@@ -147,11 +147,8 @@ aside{
   
 @media screen and (max-width: 600px) {
   h1 {
-    font-size: 25px;
-  }
-
-  .bar {
-    margin: 20px;
+    font-size: 150px;
+    line-height: 150px;
   }
 
   .burger { 
