@@ -5,11 +5,11 @@ html {
 
 @font-face {
   font-family: 'Rodondo';
-  src: url('font/Rodondo.otf');
+  src: url('../font/Rodondo.otf');
 }
 @font-face {
   font-family: 'rain_world_menu_font_Webfont';
-  src: url('font/rain-world-menu-font-webfont/rain-world-menu-font-webfont.ttf');
+  src: url('../font/rain-world-menu-font-webfont/rain-world-menu-font-webfont.ttf');
 }
   
 body {
@@ -49,7 +49,7 @@ h1{
 }
 
 .background {
-  background-image: url("pictures/background/rain-world-exteriors.jpg");
+  background-image: url("../pictures/background/rain-world-exteriors.jpg");
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-size: cover;
@@ -59,7 +59,7 @@ nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 1200px;
+  /*padding-bottom: 1200px;*/
 }
 
 a, p {
