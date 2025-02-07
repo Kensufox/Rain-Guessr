@@ -51,15 +51,18 @@ h1{
   height: fit-content;
   width: auto;
 }
+
 h6 {
   margin: 0px;
   padding: 0px;
 }
+
 li {
   margin: 0px;
   padding: 0px;
   letter-spacing: 1px;
 }
+
 a {
   color: #fff;;
   font-size: 30px;
@@ -70,6 +73,7 @@ a {
   text-decoration: none;
   font-family: rain_world_menu_font_Webfont;
 }
+
 button {
   display: flex;
   flex-direction: column;
@@ -83,12 +87,18 @@ button {
   border-color: #fff;
   background-color: transparent;
 }
+
 aside{
   display: flex;
   position: relative;
   align-items: center;
   justify-content: center;
   flex-direction: column;
+}
+
+img{
+  width: 100px;
+  
 }
 
 /*Class balise*/
@@ -98,9 +108,11 @@ aside{
   background-attachment: fixed;
   background-size: cover;
 }
+
 .title {
   height: fit-content;
 }
+
 .button-contain {
   display: flex;
   flex-direction: column;
