@@ -100,8 +100,8 @@ function parseRoomGeometry(data) {
 
         pairs.forEach(pair => {
             let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
-            if (coords.length === 2) {  // Ensure (x, y) pairs
-                vertices.push({ x: coords[0], y: coords[1] });
+            if (coords.length === 4) {  // Verify if the pair contains (x1, y1), (x2, y2)
+                vertices.push({ x1: coords[0], y1: coords[1], x2: coords[2], y2: coords[3] });
             }
         });
     });
@@ -109,30 +109,30 @@ function parseRoomGeometry(data) {
     return vertices;
 }
 
-function renderRoom(vertices) {
+function renderRoom(segments) {
     if (!gl) {
-        console.error("Error WebGL : Impossible to initialize. `gl` is null !");
+        console.error("WebGL Error : Initiation of WebGL failed,. `gl` is null !");
         return;
     }
 
-    console.log("Webgl render of the room with :", vertices.length, "points");
+    console.log("WebGL rendering :", segments.length, "segments");
+
+    let flatVertices = segments.flatMap(s => [s.x1, s.y1, s.x2, s.y2]); // Chaque segment contient (x1, y1), (x2, y2)
 
     let vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-
-    let flatVertices = vertices.flatMap(v => [v.x, v.y]); // transform the vertices in [x1, y1, x2, y2, ...]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(flatVertices), gl.STATIC_DRAW);
 
     let vertexShaderSource = `
         attribute vec2 a_position;
         void main() {
-            gl_Position = vec4(a_position * 0.01, 0, 1); // Mise à l'échelle pour éviter dépassement de l'écran
+            gl_Position = vec4(a_position * 0.01, 0, 1);
         }
     `;
 
     let fragmentShaderSource = `
         void main() {
-            gl_FragColor = vec4(1, 0, 0, 1); // Rouge
+            gl_FragColor = vec4(1, 0, 0, 1);
         }
     `;
 
@@ -158,5 +158,6 @@ function renderRoom(vertices) {
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.drawArrays(gl.LINE_STRIP, 0, vertices.length);
+    // Utiliser gl.LINES pour dessiner des segments indépendants
+    gl.drawArrays(gl.LINES, 0, flatVertices.length / 2);
 }
