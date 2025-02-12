@@ -241,6 +241,7 @@ def ascii_to_vector_wall(width, height, ascii_art):
                 top, top_left, top_right, bottom, bottom_left, bottom_right, left, right, borderx, bordery = check_AOB(width, height, ascii, x, y)
 
                 if ascii[y][x] == '#': # wall
+
                     # Check if the wall corner are points inter angle
                     if {right, bottom} == {'#'} and bottom_right in {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
@@ -250,15 +251,31 @@ def ascii_to_vector_wall(width, height, ascii_art):
                         points_list_w.append([x, y+1])# bottom left corner of the wall is a point
                     if {left, top} == {'#'} and top_left in {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x, y])# top left corner of the wall is a point
+
                     # Check if the wall corner are points outer angle
-                    #if {right, bottom, bottom_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(right == '/' and bottom == '/')):
-                    if {right, bottom, bottom_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(bottom == '/')):
+                    if {right, bottom, bottom_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(right == '/' and bottom == '/')):
+                        if bottom == '/':
+                            points_list_w.append([x+1.5, y+1])
+                        elif right == '/':
+                            points_list_w.append([x+1, y+1.5])
                         points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
-                    if {right, top, top_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(top == '/')):
+                    if {right, top, top_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(right == '/' and top == '/')):
+                        if top == '/':
+                            points_list_w.append([x+1.5, y])
+                        elif right == '/':
+                            points_list_w.append([x+1, y+0.5])
                         points_list_w.append([x+1, y])# top right corner of the wall is a point
-                    if {left, bottom, bottom_left} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(bottom == '/')):
+                    if {left, bottom, bottom_left} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(left == '/' and bottom == '/')):
+                        if bottom == '/':
+                            points_list_w.append([x+0.5, y+1])
+                        elif left == '/':
+                            points_list_w.append([x, y+1.5])
                         points_list_w.append([x, y+1])# bottom left corner of the wall is a point
-                    if {left, top, top_left} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(top == '/')):
+                    if {left, top, top_left} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(left == '/' and top == '/')):
+                        if top == '/':
+                            points_list_w.append([x+0.5, y])
+                        elif left == '/':
+                            points_list_w.append([x, y+0.5])
                         points_list_w.append([x, y])# top left corner of the wall is a point
                     # Check for corner in map border
                     if borderx == "left" and bordery == None:
@@ -425,9 +442,12 @@ def points_to_vector_w(points_list_w):
         for x, pts in grouped.items():
             while len(pts) >= 2:
                 p1, p2 = pts.pop(0), pts.pop(0)
-                if swap:
-                    p1, p2 = (p1[1], p1[0]), (p2[1], p2[0])
-                vector_list.append((p1, p2))
+                if p2[0]%1 != 0 or p2[1]%1 != 0:
+                    pass
+                else:
+                    if swap:
+                        p1, p2 = (p1[1], p1[0]), (p2[1], p2[0])
+                    vector_list.append((p1, p2))
             if pts:
                 remaining.append(pts[0])
 
