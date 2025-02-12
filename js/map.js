@@ -91,7 +91,7 @@ function parseRoomGeometry(data) {
     let lines = data.split("\n").map(line => line.trim()).filter(line => line !== "");
 
     // Get only the last 6 lines
-    let lastSixLines = lines.slice(-6);
+    let lastSixLines = lines.slice(-7);
 
     let vertices = [];
 

@@ -397,7 +397,18 @@ def ascii_to_vector_pole(width, height, ascii_art):
             try:
                 top, top_left, top_right, bottom, bottom_left, bottom_right, left, right, borderx, bordery = check_AOB(width, height, ascii, x, y)
 
-                if ascii[y][x] == '|': # vertical pole
+                if ascii[y][x] == '+': # pole but end on crossing
+                    #Check if there's a pole on top or bottom
+                    if top not in {"|", "+"}:
+                        points_list_pv.append([x+0.5, y])
+                    if bottom not in {"|", "+"}:
+                        points_list_pv.append([x+0.5, y+1])
+                    #Check if there's a pole on left or right
+                    if left not in {"-", "+"}:
+                        points_list_ph.append([x, y+0.5])
+                    if right not in {"-", "+"}:
+                        points_list_ph.append([x+1, y+0.5])
+                elif ascii[y][x] == '|': # vertical pole
                     #Check if there's a pole on top or bottom
                     if top not in {"|", "+"}:
                         points_list_pv.append([x+0.5, y])
@@ -409,6 +420,7 @@ def ascii_to_vector_pole(width, height, ascii_art):
                         points_list_ph.append([x, y+0.5])
                     if right not in {"-", "+"}:
                         points_list_ph.append([x+1, y+0.5])
+
             except:
                 print("error in ascii to vector for the pole, cell = ", x, y, "and it contain : ", ascii[y][x], " width = ", width, " height = ", height)
     try:
@@ -486,8 +498,9 @@ def points_to_vector_p(points_list_pv, points_list_ph):
     for i in range (0, len(points_list_pv)-1, 2):
         vector_list_pv.append([points_list_pv[i], points_list_pv[i+1]])
     vector_list_ph = []
+    points_list_ph = sorted(invert_list_in_list(points_list_ph))
     for i in range (0, len(points_list_ph)-1, 2):
-        vector_list_ph.append([points_list_ph[i], points_list_ph[i+1]])
+        vector_list_ph.append([(points_list_ph[i][1], points_list_ph[i][0]), (points_list_ph[i+1][1], points_list_ph[i+1][0])])
     return vector_list_pv, vector_list_ph
 
 def write_vector_list(f, vector_list):
