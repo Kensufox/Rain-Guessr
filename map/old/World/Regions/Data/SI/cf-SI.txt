@@ -1,2 +1,0 @@
-displayname.txt
-world_si.txt

@@ -251,35 +251,36 @@ def ascii_to_vector_wall(width, height, ascii_art):
                     if {left, top} == {'#'} and top_left in {'.', '=', '+', 'H', '|', '-'}:
                         points_list_w.append([x, y])# top left corner of the wall is a point
                     # Check if the wall corner are points outer angle
-                    if {right, bottom, bottom_right} <= {'.', '=', '+', 'H', '|', '-'}:
+                    #if {right, bottom, bottom_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(right == '/' and bottom == '/')):
+                    if {right, bottom, bottom_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(bottom == '/')):
                         points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
-                    if {right, top, top_right} <= {'.', '=', '+', 'H', '|', '-'}:
+                    if {right, top, top_right} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(top == '/')):
                         points_list_w.append([x+1, y])# top right corner of the wall is a point
-                    if {left, bottom, bottom_left} <= {'.', '=', '+', 'H', '|', '-'}:
+                    if {left, bottom, bottom_left} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(bottom == '/')):
                         points_list_w.append([x, y+1])# bottom left corner of the wall is a point
-                    if {left, top, top_left} <= {'.', '=', '+', 'H', '|', '-'}:
+                    if {left, top, top_left} <= {'.', '=', '+', 'H', '|', '-', '/'} and (not(top == '/')):
                         points_list_w.append([x, y])# top left corner of the wall is a point
                     # Check for corner in map border
                     if borderx == "left" and bordery == None:
-                        if top in {'.', '=', '+', 'H', '|', '-'}:
+                        if top in {'.', '=', '+', 'H', '|', '-', '/'}:
                             points_list_w.append([x, y])
-                        if bottom in {'.', '=', '+', 'H', '|', '-'}: 
+                        if bottom in {'.', '=', '+', 'H', '|', '-', '/'}: 
                             points_list_w.append([x, y+1])
                     elif borderx == "right" and bordery == None:
-                        if top in {'.', '=', '+', 'H', '|', '-'}: 
+                        if top in {'.', '=', '+', 'H', '|', '-', '/'}: 
                             points_list_w.append([x+1, y])
-                        if bottom in {'.', '=', '+', 'H', '|', '-'}: 
+                        if bottom in {'.', '=', '+', 'H', '|', '-', '/'}: 
                             points_list_w.append([x+1, y+1])
 
                     if bordery == "top" and borderx == None:
-                        if left in {'.', '=', '+', 'H', '|', '-'}:
+                        if left in {'.', '=', '+', 'H', '|', '-', '/'}:
                             points_list_w.append([x, y])
-                        if right in {'.', '=', '+', 'H', '|', '-'}: 
+                        if right in {'.', '=', '+', 'H', '|', '-', '/'}: 
                             points_list_w.append([x+1, y])
                     elif bordery == "bottom" and borderx == None:
-                        if left in {'.', '=', '+', 'H', '|', '-'}: 
+                        if left in {'.', '=', '+', 'H', '|', '-', '/'}: 
                             points_list_w.append([x, y+1])
-                        if right in {'.', '=', '+', 'H', '|', '-'}: 
+                        if right in {'.', '=', '+', 'H', '|', '-', '/'}: 
                             points_list_w.append([x+1, y+1])
                     
                     if borderx == "left" and bordery == "top":
@@ -425,7 +426,7 @@ def points_to_vector_w(points_list_w):
             while len(pts) >= 2:
                 p1, p2 = pts.pop(0), pts.pop(0)
                 if swap:
-                    p1, p2 = (p1[1], p1[1]), (p2[1], p2[0])
+                    p1, p2 = (p1[1], p1[0]), (p2[1], p2[0])
                 vector_list.append((p1, p2))
             if pts:
                 remaining.append(pts[0])
@@ -520,8 +521,8 @@ def run(root, file):
     except:
         print("points slope to vector error")
 
-    if file == ("cc_a02.txt"):
-        print(points_list_w)
+    #if file == ("cc_a02.txt"):
+    #    print(points_list_w)
 
     try:
         relative_path = os.path.relpath(root, file_path)
