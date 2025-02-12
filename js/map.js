@@ -23,7 +23,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 let map_path = "../map/World/Regions/Rooms";
-let rooms = {}; // Stocke les salles par région
+let rooms = {}; // Store the rooms by region
 
 console.log("Starting to load rooms map from :", map_path);
 
@@ -91,17 +91,24 @@ function parseRoomGeometry(data) {
     let lines = data.split("\n").map(line => line.trim()).filter(line => line !== "");
 
     // Get only the last 6 lines
-    let lastSixLines = lines.slice(-6);
+    let lastSixLines = lines.slice(-5, -4);
 
     let vertices = [];
+
+    let height = 35;
 
     lastSixLines.forEach(line => {
         let pairs = line.split("|").map(pair => pair.trim());
 
         pairs.forEach(pair => {
             let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
-            if (coords.length === 4) {  // Verify if the pair contains (x1, y1), (x2, y2)
-                vertices.push({ x1: coords[0], y1: coords[1], x2: coords[2], y2: coords[3] });
+            if (coords.length === 4) {
+                vertices.push({ 
+                    x1: coords[0], 
+                    y1: height - coords[1],  // Inversion de l'axe Y
+                    x2: coords[2], 
+                    y2: height - coords[3]   // Inversion de l'axe Y
+                });
             }
         });
     });

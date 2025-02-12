@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 
 path = os.path.dirname(os.path.abspath(__file__))
 
@@ -414,9 +415,26 @@ def invert_list_in_list(points_list_w):
     return [(y, x) for x, y in points_list_w]
 
 def points_to_vector_w(points_list_w):
-    v_vector_list = [[points_list_w[i], points_list_w[i+1]] for i in range(0, len(points_list_w)-1, 2)]
-    sorted_points = sorted(invert_list_in_list(points_list_w))
-    h_vector_list = [[(p1[1], p1[0]), (p2[1], p2[0])] for p1, p2 in zip(sorted_points[::2], sorted_points[1::2])]
+    def group_and_pair(points, swap=False):
+        grouped = defaultdict(list)
+        for x, y in points:
+            grouped[x].append((x, y))
+
+        vector_list, remaining = [], []
+        for x, pts in grouped.items():
+            while len(pts) >= 2:
+                p1, p2 = pts.pop(0), pts.pop(0)
+                if swap:
+                    p1, p2 = (p1[1], p1[1]), (p2[1], p2[0])
+                vector_list.append((p1, p2))
+            if pts:
+                remaining.append(pts[0])
+
+        return vector_list
+
+    v_vector_list = group_and_pair(points_list_w)
+    h_vector_list = group_and_pair(sorted(invert_list_in_list(points_list_w)), swap=True)
+
     return v_vector_list, h_vector_list
 
 def points_to_vector_s(points_list_sl, points_list_sr):
@@ -465,10 +483,8 @@ def run(root, file):
         ascii_art, list_error = render_ascii_art(width, height, geometry_data)
 
         # Affichage
-        print(f"Pièce : {room_name}")
-        print(f"taille : {width}x{height}")
-        #print(list_error)
-        #print(ascii_art)
+        #print(f"Pièce : {room_name}")
+        #print(f"taille : {width}x{height}")
         with open(output_file, 'a') as f:
             f.write(f"Pièce : {room_name}\n")
             f.write(f"taille : {width}x{height}\n")
@@ -504,6 +520,9 @@ def run(root, file):
     except:
         print("points slope to vector error")
 
+    if file == ("cc_a02.txt"):
+        print(points_list_w)
+
     try:
         relative_path = os.path.relpath(root, file_path)
         writing_file = os.path.join(file2_path, relative_path, file)
@@ -535,9 +554,10 @@ def run(root, file):
                 write_vector_list(f, vector_list_ph)
             except:
                 print("error will writing ph vector list")
+            f.write("end file : "+ room_name)
 
-    except:
-        print("error will writing outputs files")
+    except Exception as e:
+        print("error will writing outputs files", e)
 
 output_file = os.path.join(path, "output.txt")
 open(output_file, 'w').close()
@@ -555,8 +575,8 @@ for root, dirs, files in os.walk(file_path):
             if count == 4:
                 try:
                     run(root, file)
-                except:
-                    print("something went wrong")
+                except Exception as e:
+                    print("something went wrong : ", e)
                     with open(error_file, 'a') as f:
                         f.write(os.path.join(root, file))
                         f.write("\n")
