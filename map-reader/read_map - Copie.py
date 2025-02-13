@@ -30,10 +30,13 @@ def parse_room(spe_file_path):
         elif i == 1:
             # Ligne avec les dimensions
             width, height = map(int, line.split('|')[0].split('*'))
+        elif i == 3:
+            # Ligne avec la positions
+            pos_x, pos_y = line.split(',')
         elif i == 4:
             geometry_data = line.split('|')
 
-    return room_name, width, height, geometry_data
+    return room_name, width, height, geometry_data, pos_x, pos_y
 
 def render_ascii_art(width, height, geometry_data):
     # Création d'une grille vide
@@ -512,7 +515,7 @@ def write_vector_list(f, vector_list):
 def run(root, file):
     spe_file_path = os.path.join(root, file)
     # Lecture et rendu de la pièce
-    room_name, width, height, geometry_data = parse_room(spe_file_path)
+    room_name, width, height, geometry_data, pos_x, pos_y = parse_room(spe_file_path)
     if room_name:
         ascii_art, list_error = render_ascii_art(width, height, geometry_data)
 
@@ -520,8 +523,9 @@ def run(root, file):
         #print(f"Pièce : {room_name}")
         #print(f"taille : {width}x{height}")
         with open(output_file, 'a') as f:
-            f.write(f"Pièce : {room_name}\n")
-            f.write(f"taille : {width}x{height}\n")
+            f.write(f"{room_name}\n")
+            f.write(f"{width}x{height}\n")
+            f.write(f"{pos_x}x{pos_y}\n")
             for i in range(len(list_error)): #list_error:
                 f.write(list_error[i] + "\n")
             f.write(ascii_art + "\n")
@@ -562,7 +566,7 @@ def run(root, file):
         writing_file = os.path.join(file2_path, relative_path, file)
         with open(writing_file, 'w') as f:
             f.write(f"Pièce : {room_name}\n")
-            f.write(f"taille : {width}x{height}\n")
+            f.write(f"{width}x{height}\n")
             f.write(ascii_art + "\n")
             try:
                 write_vector_list(f, v_vector_list)

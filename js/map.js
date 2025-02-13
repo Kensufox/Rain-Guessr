@@ -112,7 +112,13 @@ function parseRoomGeometry(data) {
 
     let vertices = [];
 
-    let height = 35;
+    let size = lines.slice(1);
+    let pos = lines.slice(2);
+    console.log(pos, size);
+    let height, width = size.slit("x");
+    console.log(height, width);
+    let pos_x, pos_y= pos.slit("x");
+    console.log(pos_x, pos_y);
 
     lastSixLines.forEach(line => {
         let pairs = line.split("|").map(pair => pair.trim());
@@ -122,10 +128,10 @@ function parseRoomGeometry(data) {
             //console.log(coords);
             if (coords.length === 4) {
                 vertices.push({ 
-                    x1: coords[0], 
-                    y1: height - coords[1],  // Inversion de l'axe Y
-                    x2: coords[2], 
-                    y2: height - coords[3]   // Inversion de l'axe Y
+                    x1: pos_x + coords[0], 
+                    y1: pos_y + height - coords[1],  // Inversion de l'axe Y
+                    x2: pos_x + coords[2], 
+                    y2: pos_y + height - coords[3]   // Inversion de l'axe Y
                 });
             }
         });
