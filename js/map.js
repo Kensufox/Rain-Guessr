@@ -47,20 +47,37 @@ fetch(map_path + "/regions.txt")
 
         // find the first region and first room
         let firstRegion = Object.keys(rooms)[0];  // first region
-        let firstRoom = rooms[firstRegion][0];    // first room
+        //let firstRoom = rooms[firstRegion][0];    // first room
 
-        console.log("Room found :", firstRoom);
+        //console.log("Room found :", firstRoom);
 
-        if (firstRoom.endsWith(".txt")) {
-            firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if already present
-        }
+        //if (firstRoom.endsWith(".txt")) {
+        //    firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if already present
+        //}
 
-        if (firstRegion && firstRoom) {
-            console.log("Starting to load first room :", firstRoom);
-            loadRoomGeometry(firstRegion, firstRoom);
-        } else {
-          console.warn("No room found.");
-        }
+        //if (firstRegion && firstRoom) {
+        //    console.log("Starting to load first room :", firstRoom);
+        //    loadRoomGeometry(firstRegion, firstRoom);
+        //} else {
+        //  console.warn("No room found.");
+        //}
+        initRender();
+        for (let i = 0; i <= rooms[firstRegion].length; i++) {
+            let firstRoom = rooms[firstRegion][i];    // first room
+
+            console.log("Room found :", firstRoom);
+
+            if (firstRoom.endsWith(".txt")) {
+                firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if already present
+            }
+
+            if (firstRegion && firstRoom) {
+                console.log("Starting to load first room :", firstRoom);
+                loadRoomGeometry(firstRegion, firstRoom);
+            } else {
+              console.warn("No room found.");
+            }
+          }
     })
     .catch(error => console.error("Error while loading of room :", error));
 
@@ -75,7 +92,7 @@ function loadRoomGeometry(region, room) {
             return response.text();
         })
         .then(data => {
-            //console.log(`Raw data for ${room}:`, data);
+            console.log(`Raw data for ${room}:`, data);
             
             // Convert into useful geometry data
             let geometry = parseRoomGeometry(data);
@@ -117,15 +134,17 @@ function parseRoomGeometry(data) {
     return vertices;
 }
 
-function renderRoom(segments) {
+function initRender() {
     if (!gl) {
         console.error("WebGL Error : Initiation of WebGL failed,. `gl` is null !");
         return;
     }
+}
 
+function renderRoom(segments) {
     console.log("WebGL rendering :", segments.length, "segments");
 
-    let flatVertices = segments.flatMap(s => [s.x1, s.y1, s.x2, s.y2]); // Chaque segment contient (x1, y1), (x2, y2)
+    let flatVertices = segments.flatMap(s => [s.x1, s.y1, s.x2, s.y2]);
 
     let vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -163,8 +182,8 @@ function renderRoom(segments) {
     gl.enableVertexAttribArray(positionAttribute);
     gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 0, 0);
 
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    //gl.clearColor(0, 0, 0, 1);
+    //gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Utiliser gl.LINES pour dessiner des segments indépendants
     gl.drawArrays(gl.LINES, 0, flatVertices.length / 2);
