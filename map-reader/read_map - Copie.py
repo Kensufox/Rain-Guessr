@@ -7,8 +7,25 @@ file = "World\Regions\Rooms"
 file_path = os.path.join(path, file)
 file2 = "World-vector\Regions\Rooms"
 file2_path = os.path.join(path, file2)
+data = "World\Regions\Data"
+data_path = os.path.join(path, data)
 
 strange_values = []
+
+def pos_room(data_path):
+    pos_data = {}
+    for root, dirs, files in os.walk(data_path):
+        for file in files:
+            if file == (f"map_{(root.replace(data_path, ''))[1:]}.txt"):
+                with open(os.path.join(root, file), 'r') as fp:
+                    for count, line in enumerate(fp):
+                        room = ((line.split(": ")[0])).lower()
+                        if room != "connection" and room[:4] != "gate" and room[:4] != "offs":
+                            datas = ((line.split(": ")[1]).split("><"))[:-4]
+                            for i in range(len(datas)):
+                                datas[i] = int(float(datas[i]))
+                            pos_data[room] = datas
+    return pos_data
 
 def parse_room(spe_file_path):
     with open(spe_file_path, 'r') as file:
@@ -30,13 +47,10 @@ def parse_room(spe_file_path):
         elif i == 1:
             # Ligne avec les dimensions
             width, height = map(int, line.split('|')[0].split('*'))
-        elif i == 3:
-            # Ligne avec la positions
-            pos_x, pos_y = line.split(',')
         elif i == 4:
             geometry_data = line.split('|')
 
-    return room_name, width, height, geometry_data, pos_x, pos_y
+    return room_name, width, height, geometry_data
 
 def render_ascii_art(width, height, geometry_data):
     # Création d'une grille vide
@@ -512,20 +526,19 @@ def write_vector_list(f, vector_list):
             f.write(f"({vector_list[i][0][0]},{vector_list[i][0][1]}),({vector_list[i][1][0]},{vector_list[i][1][1]})|")
     f.write("\n")
 
-def run(root, file):
+def run(root, file, room_pos):
     spe_file_path = os.path.join(root, file)
-    # Lecture et rendu de la pièce
-    room_name, width, height, geometry_data, pos_x, pos_y = parse_room(spe_file_path)
+    try:
+        room_name, width, height, geometry_data = parse_room(spe_file_path)
+    except Exception as e:
+        print("parse room error : ", e)
     if room_name:
         ascii_art, list_error = render_ascii_art(width, height, geometry_data)
+        pos_x, pos_y = room_pos[file[:-4]]
 
-        # Affichage
-        #print(f"Pièce : {room_name}")
-        #print(f"taille : {width}x{height}")
         with open(output_file, 'a') as f:
             f.write(f"{room_name}\n")
             f.write(f"{width}x{height}\n")
-            f.write(f"{pos_x}x{pos_y}\n")
             for i in range(len(list_error)): #list_error:
                 f.write(list_error[i] + "\n")
             f.write(ascii_art + "\n")
@@ -567,6 +580,7 @@ def run(root, file):
         with open(writing_file, 'w') as f:
             f.write(f"Pièce : {room_name}\n")
             f.write(f"{width}x{height}\n")
+            f.write(f"{pos_x}x{pos_y}\n")
             f.write(ascii_art + "\n")
             try:
                 write_vector_list(f, v_vector_list)
@@ -603,6 +617,7 @@ error_file = os.path.join(path, "error.txt")
 open(error_file, 'w').close()
 
 list_error = []
+room_pos = pos_room(data_path)
 
 for root, dirs, files in os.walk(file_path):
     for file in files:
@@ -612,7 +627,7 @@ for root, dirs, files in os.walk(file_path):
                     pass
             if count == 4:
                 try:
-                    run(root, file)
+                    run(root, file, room_pos)
                 except Exception as e:
                     print("something went wrong : ", e)
                     with open(error_file, 'a') as f:
