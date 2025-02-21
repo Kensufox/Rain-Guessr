@@ -52,7 +52,7 @@ fetch(map_path + "/regions.txt")
         //console.log("Room found :", firstRoom);
 
         //if (firstRoom.endsWith(".txt")) {
-        //    firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if already present
+        //    firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if present
         //}
 
         //if (firstRegion && firstRoom) {
@@ -62,13 +62,14 @@ fetch(map_path + "/regions.txt")
         //  console.warn("No room found.");
         //}
         initRender();
+        console.log(rooms[firstRegion]);
         for (let i = 0; i <= rooms[firstRegion].length; i++) {
             let firstRoom = rooms[firstRegion][i];    // first room
 
             console.log("Room found :", firstRoom);
 
             if (firstRoom.endsWith(".txt")) {
-                firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if already present
+                firstRoom = firstRoom.slice(0, -4); // Supp ".txt" if present
             }
 
             if (firstRegion && firstRoom) {
@@ -92,11 +93,11 @@ function loadRoomGeometry(region, room) {
             return response.text();
         })
         .then(data => {
-            console.log(`Raw data for ${room}:`, data);
+            //console.log(`Raw data for ${room}:`, data);
             
             // Convert into useful geometry data
             let geometry = parseRoomGeometry(data);
-            console.log(`Geometry data for ${room}:`, geometry);
+            //console.log(`Geometry data for ${room}:`, geometry);
             
             // Show room with WebGL
             renderRoom(geometry);
@@ -109,34 +110,40 @@ function parseRoomGeometry(data) {
 
     // Get only the last 6 lines
     let lastSixLines = lines.slice(-7);
+    lastSixLines.pop();
 
     let vertices = [];
 
-    let size = lines.slice(1);
-    let pos = lines.slice(2);
-    console.log(pos, size);
-    let height, width = size.slit("x");
-    console.log(height, width);
-    let pos_x, pos_y= pos.slit("x");
-    console.log(pos_x, pos_y);
+    let size = lines.slice()[1];
+    let pos = lines.slice()[2];
+    let [height, width] = size.split("x").map(num => parseInt(num.trim(), 10));
+    let [pos_x, pos_y] = pos.split("x").map(num => parseInt(num.trim(), 10));
 
     lastSixLines.forEach(line => {
+
+        if (line.trim() === "None|") {
+            return;
+        }
+
         let pairs = line.split("|").map(pair => pair.trim());
+        pairs.pop();
+        //console.log(pairs);
 
         pairs.forEach(pair => {
             let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
+            //console.count(coords);
             //console.log(coords);
             if (coords.length === 4) {
                 vertices.push({ 
-                    x1: pos_x + coords[0], 
-                    y1: pos_y + height - coords[1],  // Inversion de l'axe Y
-                    x2: pos_x + coords[2], 
-                    y2: pos_y + height - coords[3]   // Inversion de l'axe Y
+                    x1: pos_x/2 + coords[0], 
+                    y1: pos_y/2 - coords[1],
+                    x2: pos_x/2 + coords[2], 
+                    y2: pos_y/2 - coords[3]
                 });
             }
         });
     });
-
+    console.log(vertices);
     return vertices;
 }
 
@@ -147,10 +154,21 @@ function initRender() {
     }
 }
 
+
 function renderRoom(segments) {
-    console.log("WebGL rendering :", segments.length, "segments");
+    console.log("WebGL rendering:", segments.length, "segments");
 
     let flatVertices = segments.flatMap(s => [s.x1, s.y1, s.x2, s.y2]);
+
+    // Center the coordinates in WebGL space ([-1, 1])
+    const scaleX = 2 / canvas.width;  // Échelle pour l'axe X
+    const scaleY = 2 / canvas.height; // Échelle pour l'axe Y
+
+    flatVertices = flatVertices.map((value, index) => 
+        index % 2 === 0  // X coordinate
+            ? (value / canvas.width) * 2  // Transformation X pour centrer
+            : (value / canvas.height) * 2 // Transformation Y pour centrer
+    );
 
     let vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -159,13 +177,13 @@ function renderRoom(segments) {
     let vertexShaderSource = `
         attribute vec2 a_position;
         void main() {
-            gl_Position = vec4(a_position * 0.01, 0, 1);
+            gl_Position = vec4(a_position, 0, 1);
         }
     `;
 
     let fragmentShaderSource = `
         void main() {
-            gl_FragColor = vec4(1, 0, 0, 1);
+            gl_FragColor = vec4(1, 0, 0, 1);  // Red color for the lines
         }
     `;
 
@@ -182,15 +200,28 @@ function renderRoom(segments) {
     gl.attachShader(shaderProgram, fragmentShader);
     gl.linkProgram(shaderProgram);
 
+    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+        console.error("Vertex shader compilation failed: " + gl.getShaderInfoLog(vertexShader));
+    }
+
+    if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+        console.error("Fragment shader compilation failed: " + gl.getShaderInfoLog(fragmentShader));
+    }
+
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        console.error("Program linking failed: " + gl.getProgramInfoLog(shaderProgram));
+    }
+
     gl.useProgram(shaderProgram);
 
     let positionAttribute = gl.getAttribLocation(shaderProgram, "a_position");
     gl.enableVertexAttribArray(positionAttribute);
     gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 0, 0);
 
-    //gl.clearColor(0, 0, 0, 1);
-    //gl.clear(gl.COLOR_BUFFER_BIT);
+    //gl.clearColor(0, 0, 0, 1); // Clear the canvas to black
+    //gl.clear(gl.COLOR_BUFFER_BIT); // Actually clear the canvas
 
-    // Utiliser gl.LINES pour dessiner des segments indépendants
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
     gl.drawArrays(gl.LINES, 0, flatVertices.length / 2);
 }

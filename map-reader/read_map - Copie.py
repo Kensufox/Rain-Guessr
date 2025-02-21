@@ -524,6 +524,8 @@ def write_vector_list(f, vector_list):
     if vector_list:
         for i in range(len(vector_list)):
             f.write(f"({vector_list[i][0][0]},{vector_list[i][0][1]}),({vector_list[i][1][0]},{vector_list[i][1][1]})|")
+    else:
+        f.write("None|")
     f.write("\n")
 
 def run(root, file, room_pos):
@@ -578,7 +580,7 @@ def run(root, file, room_pos):
         relative_path = os.path.relpath(root, file_path)
         writing_file = os.path.join(file2_path, relative_path, file)
         with open(writing_file, 'w') as f:
-            f.write(f"Pièce : {room_name}\n")
+            f.write(f"Piece : {room_name}\n")
             f.write(f"{width}x{height}\n")
             f.write(f"{pos_x}x{pos_y}\n")
             f.write(ascii_art + "\n")
