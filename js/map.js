@@ -1,4 +1,5 @@
 let gl;
+let geometry;
 
 // Wait until the DOM (HTML Document) is loaded
 window.addEventListener("DOMContentLoaded", () => {
@@ -32,80 +33,72 @@ fetch(map_path + "/regions.txt")
     .then(response => response.text())
     .then(async function(data) {
         let region_abbrs = data.replaceAll("\r", "").split("\n").map(region => region.trim()).filter(region => region !== "");
-    
+
         let fetchPromises = region_abbrs.map(region =>
             fetch(map_path + "/" + region + "/cf-" + region + ".txt")
                 .then(response => response.text())
                 .then(data => {
                     rooms[region] = data.split("\n").map(room => room.trim()); // store the list of rooms by region
                 })
-                .catch(error => console.error("Error while loading of rooms for region" + region, error))
+                .catch(error => console.error("Error while loading rooms for region " + region, error))
         );
 
-        // wait until all requests are done
+        // Wait until all room lists are loaded
         await Promise.all(fetchPromises);
-
         initRender();
-        for (let i = 0; i <= Object.keys(rooms).length; i++){
-            console.log("try : ", i);
-            loadRegion(Object.keys(rooms)[i]);
-        }
-        })
-    .catch(error => console.error("Error while loading of room :", error));
 
-function loadRegion(Region) {
-    let Room = rooms[Region][0]; 
-    console.log("Room found :", Room);
-    if (Room.endsWith(".txt")) {
-        Room = Room.slice(0, -4); // Supp ".txt" if present
-    }
-    if (Region && Room) {
-        //console.log("Starting to load first room :", Room);
-        loadRoomGeometry(Region, Room);
-    } else {
-        console.warn("No room found.");
-    }
-    rooms[Region].pop();
-    //console.log(rooms[Region]);
+        // Load all room geometries
+        let loadRegionPromises = Object.keys(rooms).map(region => loadRegion(region));
+        let geometryArray = await Promise.all(loadRegionPromises);
+
+        geometryArray.forEach(geometry => {
+            if (geometry.length > 0) renderRoom(geometry);
+        });
+    })
+    .catch(error => console.error("Error while loading rooms:", error));
+
+async function loadRegion(Region) {
+    rooms[Region].pop(); // Remove last empty element if it exists
+
+    let geom = [];
+
     for (let i = 0; i < rooms[Region].length; i++) {
-        let Room = rooms[Region][i];    // first room
-
-        //console.log("Room found :", Room);
+        let Room = rooms[Region][i];
 
         if (Room.endsWith(".txt")) {
-            Room = Room.slice(0, -4); // Supp ".txt" if present
+            Room = Room.slice(0, -4); // Remove ".txt" extension
         }
 
         if (Region && Room) {
-            //console.log("Starting to load first room :", Room);
-            loadRoomGeometry(Region, Room);
+            try {
+                let roomGeom = await loadRoomGeometry(Region, Room); // Await result
+                if (roomGeom) {
+                    geom.push(...roomGeom); // Store geometry data
+                }
+            } catch (error) {
+                console.error(`Error loading geometry for ${Region}/${Room}:`, error);
+            }
         } else {
             console.warn("No room found.");
         }
     }
+
+    return geom; // Return the collected geometry
 }
 
-function loadRoomGeometry(region, room) {
+async function loadRoomGeometry(region, room) {
     let roomPath = `${map_path}/${region}/${room}.txt`;
 
-    //console.log(`Loading the room ${room} in region ${region}...`);
+    try {
+        let response = await fetch(roomPath);
+        if (!response.ok) throw new Error(`File not found: ${roomPath}`);
 
-    fetch(roomPath)
-        .then(response => {
-            if (!response.ok) throw new Error(`Unfound file : ${roomPath}`);
-            return response.text();
-        })
-        .then(data => {
-            //console.log(`Raw data for ${room}:`, data);
-            
-            // Convert into useful geometry data
-            let geometry = parseRoomGeometry(data);
-            //console.log(`Geometry data for ${room}:`, geometry);
-            
-            // Show room with WebGL
-            renderRoom(geometry);
-        })
-        .catch(error => console.error(`Error while loading ${room} :`, error));
+        let data = await response.text();
+        return parseRoomGeometry(data); // Return parsed geometry
+    } catch (error) {
+        console.error(`Error loading ${room}:`, error);
+        return []; // Return an empty array on failure
+    }
 }
     
 function parseRoomGeometry(data) {
@@ -130,12 +123,9 @@ function parseRoomGeometry(data) {
 
         let pairs = line.split("|").map(pair => pair.trim());
         pairs.pop();
-        //console.log(pairs);
 
         pairs.forEach(pair => {
             let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
-            //console.count(coords);
-            //console.log(coords);
             if (coords.length === 4) {
                 vertices.push({ 
                     x1: pos_x/2 + coords[0], 
@@ -146,7 +136,6 @@ function parseRoomGeometry(data) {
             }
         });
     });
-    //console.log(vertices);
     return vertices;
 }
 
@@ -157,8 +146,8 @@ function initRender() {
     }
 }
 
-
 function renderRoom(segments) {
+    //console.log("WebGL rendering:", segments);
     //console.log("WebGL rendering:", segments.length, "segments");
 
     let flatVertices = segments.flatMap(s => [s.x1, s.y1, s.x2, s.y2]);
