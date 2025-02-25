@@ -1,7 +1,6 @@
 ds_a01.txt
 ds_a02.txt
 ds_a05.txt
-ds_a05x.txt
 ds_a06.txt
 ds_a07.txt
 ds_a08.txt

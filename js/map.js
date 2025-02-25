@@ -88,20 +88,35 @@ async function loadRegion(Region) {
 
 async function loadRoomGeometry(region, room) {
     let roomPath = `${map_path}/${region}/${room}.txt`;
+    let region_pos_path = `${map_path}/region_pos.txt`;
 
     try {
         let response = await fetch(roomPath);
         if (!response.ok) throw new Error(`File not found: ${roomPath}`);
+        let response2 = await fetch(region_pos_path);
+        if (!response2.ok) throw new Error(`File not found: ${region_pos_path}`);
+
 
         let data = await response.text();
-        return parseRoomGeometry(data); // Return parsed geometry
+        let pos_region = await response2.text();
+        console.log(pos_region);
+        //pos_region = pos_region.split("\n").split(":");
+        //console.log(pos_region);
+        for (let i = 0; i < pos_region.length; i++) {
+            let region_pos = pos_region[i].split(":");
+            if (region_pos[0].includes(region)) {
+                pos_region = region_pos[1].split("x");
+        }
+        console.log(pos_region);
+        //pos_region = pos_region.split("\n").map(region => region.trim()).filter(region => region !== "");
+        return parseRoomGeometry(data, region_pos); // Return parsed geometry
     } catch (error) {
         console.error(`Error loading ${room}:`, error);
         return []; // Return an empty array on failure
     }
 }
     
-function parseRoomGeometry(data) {
+function parseRoomGeometry(data, region_pos) {
     let lines = data.split("\n").map(line => line.trim()).filter(line => line !== "");
 
     // Get only the last 6 lines
@@ -128,10 +143,10 @@ function parseRoomGeometry(data) {
             let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
             if (coords.length === 4) {
                 vertices.push({ 
-                    x1: pos_x/2 + coords[0], 
-                    y1: pos_y/2 - coords[1],
-                    x2: pos_x/2 + coords[2], 
-                    y2: pos_y/2 - coords[3]
+                    x1: pos_x/2 + coords[0], //+ region_pos[0], 
+                    y1: pos_y/2 - coords[1], //+ region_pos[1],
+                    x2: pos_x/2 + coords[2], //+ region_pos[0], 
+                    y2: pos_y/2 - coords[3]  //+ region_pos[1]
                 });
             }
         });
