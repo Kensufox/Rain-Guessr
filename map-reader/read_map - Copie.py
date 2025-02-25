@@ -262,27 +262,27 @@ def ascii_to_vector_wall(width, height, ascii_art):
                     # Check if the wall corner are points inter angle
                     if ((right == '#' and bottom == '#') or (right == '#' and bottom == '/') or (right == '/' and bottom == '#')) and bottom_right in {'.', '=', '+', 'H', '|', '-'}:
                         if bottom == '/':
-                            points_list_w.append([x+1.5, y])
+                            points_list_w.append([x+1, y+1.5])
                         elif right == '/':
-                            points_list_w.append([x, y+1.5])
+                            points_list_w.append([x+1.5, y+1])
                         points_list_w.append([x+1, y+1])# bottom right corner of the wall is a point
                     if ((right == '#' and top == '#') or (right == '#' and top == '/') or (right == '/' and top == '#')) and top_right in {'.', '=', '+', 'H', '|', '-'}:
                         if top == '/':
-                            points_list_w.append([x+0.5, y])
+                            points_list_w.append([x+1, y+0.5])
                         elif right == '/':
-                            points_list_w.append([x, y+1.5])
+                            points_list_w.append([x+1.5, y])
                         points_list_w.append([x+1, y])# top right corner of the wall is a point
                     if ((left == '#' and bottom == '#') or (left == '#' and bottom == '/') or (left == '/' and bottom == '#')) and bottom_left in {'.', '=', '+', 'H', '|', '-'}:
                         if bottom == '/':
-                            points_list_w.append([x+1.5, y])
+                            points_list_w.append([x, y+1.5])
                         elif left == '/':
-                            points_list_w.append([x, y+0.5])
+                            points_list_w.append([x+0.5, y+1])
                         points_list_w.append([x, y+1])# bottom left corner of the wall is a point
                     if ((left == '#' and top == '#') or (left == '#' and top == '/') or (left == '/' and top == '#')) and top_left in {'.', '=', '+', 'H', '|', '-'}:
                         if top == '/':
-                            points_list_w.append([x+0.5, y])
-                        elif left == '/':
                             points_list_w.append([x, y+0.5])
+                        elif left == '/':
+                            points_list_w.append([x+0.5, y])
                         points_list_w.append([x, y])# top left corner of the wall is a point
 
                     # Check if the wall corner are points outer angle
