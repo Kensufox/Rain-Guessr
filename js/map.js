@@ -93,26 +93,36 @@ async function loadRoomGeometry(region, room) {
     try {
         let response = await fetch(roomPath);
         if (!response.ok) throw new Error(`File not found: ${roomPath}`);
+        let data = await response.text();
+
         let response2 = await fetch(region_pos_path);
         if (!response2.ok) throw new Error(`File not found: ${region_pos_path}`);
-
-
-        let data = await response.text();
         let pos_region = await response2.text();
-        console.log(pos_region);
-        //pos_region = pos_region.split("\n").split(":");
-        //console.log(pos_region);
-        for (let i = 0; i < pos_region.length; i++) {
-            let region_pos = pos_region[i].split(":");
-            if (region_pos[0].includes(region)) {
-                pos_region = region_pos[1].split("x");
+
+        //console.log("Raw region position data:", pos_region);
+        
+        let pos_region_lines = pos_region.split("\n").map(line => line.trim()).filter(line => line);
+        //console.log(pos_region_lines);
+        let region_position = null;
+
+        for (let i = 0; i < pos_region_lines.length; i++) {
+            let region_pos = pos_region_lines[i].split(":");
+            if (region_pos[0].trim() === region.split('-')[0]) {
+                region_position = region_pos[1].split("x").map(Number);
+                break;
+            }
         }
-        console.log(pos_region);
-        //pos_region = pos_region.split("\n").map(region => region.trim()).filter(region => region !== "");
-        return parseRoomGeometry(data, region_pos); // Return parsed geometry
+
+        if (!region_position) {
+            throw new Error(`Region ${region} not found in ${region_pos_path}`);
+        }
+
+        console.log("Parsed region position:", region_position);
+
+        return parseRoomGeometry(data, region_position);
     } catch (error) {
         console.error(`Error loading ${room}:`, error);
-        return []; // Return an empty array on failure
+        return [];
     }
 }
     
@@ -139,14 +149,16 @@ function parseRoomGeometry(data, region_pos) {
         let pairs = line.split("|").map(pair => pair.trim());
         pairs.pop();
 
+        let zoom = 2;
+
         pairs.forEach(pair => {
             let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
             if (coords.length === 4) {
                 vertices.push({ 
-                    x1: pos_x/2 + coords[0], //+ region_pos[0], 
-                    y1: pos_y/2 - coords[1], //+ region_pos[1],
-                    x2: pos_x/2 + coords[2], //+ region_pos[0], 
-                    y2: pos_y/2 - coords[3]  //+ region_pos[1]
+                    x1: (pos_x/2 + (coords[0])*1 + region_pos[0]) * zoom, 
+                    y1: (pos_y/2 - (coords[1])*1 + region_pos[1]) * zoom,
+                    x2: (pos_x/2 + (coords[2])*1 + region_pos[0]) * zoom, 
+                    y2: (pos_y/2 - (coords[3])*1 + region_pos[1]) * zoom
                 });
             }
         });
@@ -163,7 +175,7 @@ function initRender() {
 
 function renderRoom(segments) {
     //console.log("WebGL rendering:", segments);
-    //console.log("WebGL rendering:", segments.length, "segments");
+    console.log("WebGL rendering:", segments.length, "segments");
 
     let flatVertices = segments.flatMap(s => [s.x1, s.y1, s.x2, s.y2]);
 
