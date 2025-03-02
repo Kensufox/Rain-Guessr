@@ -1,5 +1,6 @@
 let gl;
 let geometry;
+const roomBoundaries = {};
 
 // Wait until the DOM (HTML Document) is loaded
 window.addEventListener("DOMContentLoaded", () => {
@@ -56,6 +57,14 @@ fetch(map_path + "/regions.txt")
         });
     })
     .catch(error => console.error("Error while loading rooms:", error));
+
+canvas.addEventListener("mousemove", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = ((event.clientX - rect.left) / canvas.width) * 2 - 1;
+    const mouseY = ((rect.bottom - event.clientY) / canvas.height) * 2 - 1;
+
+    detectRoomCollision(mouseX, mouseY);
+});
 
 async function loadRegion(Region) {
     rooms[Region].pop(); // Remove last empty element if it exists
@@ -127,43 +136,29 @@ async function loadRoomGeometry(region, room) {
 }
     
 function parseRoomGeometry(data, region_pos) {
-    let lines = data.split("\n").map(line => line.trim()).filter(line => line !== "");
+    const lines = data.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const [height, width] = lines[1].split("x").map(Number);
+    const [pos_x, pos_y] = lines[2].split("x").map(Number);
 
-    // Get only the last 6 lines
-    let lastSixLines = lines.slice(-7);
-    lastSixLines.pop();
+    // Convert room position to WebGL space
+    const x1 = (pos_x / 2 + region_pos[0]);
+    const y1 = (pos_y / 2 + region_pos[1]);
+    const x2 = x1 + width;
+    const y2 = y1 + height;
 
-    let vertices = [];
+    roomBoundaries[data] = { x1, y1, x2, y2 };
 
-    let size = lines.slice()[1];
-    let pos = lines.slice()[2];
-    let [height, width] = size.split("x").map(num => parseInt(num.trim(), 10));
-    let [pos_x, pos_y] = pos.split("x").map(num => parseInt(num.trim(), 10));
-
-    lastSixLines.forEach(line => {
-
-        if (line.trim() === "None|") {
-            return;
-        }
-
-        let pairs = line.split("|").map(pair => pair.trim());
-        pairs.pop();
-
-        let zoom = 2;
-
-        pairs.forEach(pair => {
-            let coords = pair.replace(/[()]/g, "").split(",").map(num => parseFloat(num.trim()));
-            if (coords.length === 4) {
-                vertices.push({ 
-                    x1: (pos_x/2 + (coords[0])*1 + region_pos[0]) * zoom, 
-                    y1: (pos_y/2 - (coords[1])*1 + region_pos[1]) * zoom,
-                    x2: (pos_x/2 + (coords[2])*1 + region_pos[0]) * zoom, 
-                    y2: (pos_y/2 - (coords[3])*1 + region_pos[1]) * zoom
-                });
-            }
-        });
-    });
-    return vertices;
+    return lines.slice(-7, -1).flatMap(line =>
+        line === "None|" ? [] : line.split("|").map(pair => pair.trim()).filter(Boolean).map(pair => {
+            const [x1, y1, x2, y2] = pair.replace(/[()]/g, "").split(",").map(Number);
+            return {
+                x1: (pos_x / 2 + x1 + region_pos[0]),
+                y1: (pos_y / 2 - y1 + region_pos[1]),
+                x2: (pos_x / 2 + x2 + region_pos[0]),
+                y2: (pos_y / 2 - y2 + region_pos[1])
+            };
+        })
+    );
 }
 
 function initRender() {
@@ -171,6 +166,16 @@ function initRender() {
         console.error("WebGL Error : Initiation of WebGL failed,. `gl` is null !");
         return;
     }
+}
+
+function detectRoomCollision(mouseX, mouseY) {
+    for (const [room, { x1, y1, x2, y2 }] of Object.entries(roomBoundaries)) {
+        if (mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2) {
+            console.log("Mouse is inside room:", room);
+            return;
+        }
+    }
+    console.log("Mouse is not inside any room.");
 }
 
 function renderRoom(segments) {
