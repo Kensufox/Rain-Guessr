@@ -125,9 +125,7 @@ async function loadRoomGeometry(region, room) {
         if (!region_position) {
             throw new Error(`Region ${region} not found in ${region_pos_path}`);
         }
-
-        console.log("Parsed region position:", region_position);
-
+        
         return parseRoomGeometry(data, region_position);
     } catch (error) {
         console.error(`Error loading ${room}:`, error);
@@ -170,6 +168,7 @@ function initRender() {
 
 function detectRoomCollision(mouseX, mouseY) {
     for (const [room, { x1, y1, x2, y2 }] of Object.entries(roomBoundaries)) {
+        console.log("Checking boundaries:", x1, y1, x2, y2, "Mouse coordinates:", mouseX, mouseY);
         if (mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2) {
             console.log("Mouse is inside room:", room);
             return;
@@ -180,7 +179,7 @@ function detectRoomCollision(mouseX, mouseY) {
 
 function renderRoom(segments) {
     //console.log("WebGL rendering:", segments);
-    console.log("WebGL rendering:", segments.length, "segments");
+    //console.log("WebGL rendering:", segments.length, "segments");
 
     let flatVertices = segments.flatMap(s => [s.x1, s.y1, s.x2, s.y2]);
 
@@ -216,7 +215,7 @@ function renderRoom(segments) {
     gl.compileShader(vertexShader);
 
     let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShader, fragmentShaderSource);
+    gl.shaderSource(fragmentShader, fragmentShaderSource)
     gl.compileShader(fragmentShader);
 
     let shaderProgram = gl.createProgram();
