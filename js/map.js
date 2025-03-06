@@ -63,9 +63,9 @@ canvas.addEventListener("mousemove", (event) => {
     //const mouseX = ((event.clientX - rect.left) / canvas.width) * 2 - 1;
     //const mouseY = ((rect.bottom - event.clientY) / canvas.height) * 2 - 1;
     const mouseX = event.clientX - rect.left - (canvas.width / 2);
-    const mouseY = rect.bottom + event.clientY;
+    const mouseY = rect.bottom - event.clientY - (canvas.height / 2);
     //console.log("Mouse X:", mouseX, " event.clientX:", event.clientX, " rect.left:", rect.left, " canvas.width:", canvas.width)
-    console.log("Mouse Y:", mouseY, " event.clientY:", event.clientY, " rect.bottom:", rect.bottom, " canvas.height:", canvas.height)
+    //console.log("Mouse Y:", mouseY, " event.clientY:", event.clientY, " rect.top:", rect.top, " rect.bottom:", rect.bottom, " canvas.height:", canvas.height)
     //correct pos = event.clientX - rect.left
 
     detectRoomCollision(mouseX, mouseY);
