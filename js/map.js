@@ -59,9 +59,14 @@ fetch(map_path + "/regions.txt")
     .catch(error => console.error("Error while loading rooms:", error));
 
 canvas.addEventListener("mousemove", (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = ((event.clientX - rect.left) / canvas.width) * 2 - 1;
-    const mouseY = ((rect.bottom - event.clientY) / canvas.height) * 2 - 1;
+    const rect = canvas.getBoundingClientRect(); // Get the canvas position on the page (relative to the viewport, the scroll)
+    //const mouseX = ((event.clientX - rect.left) / canvas.width) * 2 - 1;
+    //const mouseY = ((rect.bottom - event.clientY) / canvas.height) * 2 - 1;
+    const mouseX = event.clientX - rect.left - (canvas.width / 2);
+    const mouseY = rect.bottom + event.clientY;
+    //console.log("Mouse X:", mouseX, " event.clientX:", event.clientX, " rect.left:", rect.left, " canvas.width:", canvas.width)
+    console.log("Mouse Y:", mouseY, " event.clientY:", event.clientY, " rect.bottom:", rect.bottom, " canvas.height:", canvas.height)
+    //correct pos = event.clientX - rect.left
 
     detectRoomCollision(mouseX, mouseY);
 });
@@ -168,9 +173,9 @@ function initRender() {
 
 function detectRoomCollision(mouseX, mouseY) {
     for (const [room, { x1, y1, x2, y2 }] of Object.entries(roomBoundaries)) {
-        console.log("Checking boundaries:", x1, y1, x2, y2, "Mouse coordinates:", mouseX, mouseY);
+        //console.log("Checking boundaries:", x1, y1, x2, y2, "Mouse coordinates:", mouseX, mouseY);
         if (mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2) {
-            console.log("Mouse is inside room:", room);
+            console.log("Mouse is inside room:");
             return;
         }
     }
