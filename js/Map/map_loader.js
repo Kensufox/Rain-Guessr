@@ -70,6 +70,10 @@ async function loadMap() {
             loadConnections(`${region}-rooms`, regionPosCache)
         ));
 
+        // Premier affichage : envoie pan/zoom au shader et dessine tout (géométrie + connexions + overlay)
+        if (typeof applyTransform === "function") applyTransform();
+        else if (typeof redraw === "function") redraw();
+
         // game.js / map-room.html écoutent cet évènement
         window.dispatchEvent(new Event("mapLoaded"));
 

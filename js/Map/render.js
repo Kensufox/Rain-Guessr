@@ -103,6 +103,11 @@ function initRender() {
     gl.enableVertexAttribArray(positionAttribute);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
+    // Le shader n'existe qu'à partir d'ici : moving_map_script.js a appelé setRenderTransform()
+    // au DOMContentLoaded, trop tôt (shaderProgram était null, rien n'a été envoyé).
+    // Sans cet appel, u_scale reste à 0 et la géométrie est invisible jusqu'au 1er déplacement.
+    setRenderTransform(window.mapPanX || 0, window.mapPanY || 0, window.scale || 1);
+
     console.log("Shader compiled and ready.");
 }
 
