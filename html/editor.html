@@ -310,6 +310,12 @@
 // ============================================================
 const MAP_PATH = '../map/World/Regions/Rooms';
 
+// Même source que map-room.html : positions des rooms (map-data.json) + géométrie JSON par région.
+// map-data.json est généré par precompile-map.py (à relancer après avoir remplacé region_pos.txt).
+const MAP_DATA_URL  = '../json/map-data.json';
+const GEOMETRY_BASE = '../json/geometry';
+const GEOMETRY_SETS = ['vanilla'];   // par ordre de priorité, comme map_loader.js
+
 // ============================================================
 // STATE
 // ============================================================
@@ -373,10 +379,6 @@ function setLoadMsg(msg) {
 // DATA LOADING
 // ============================================================
 async function loadData() {
-  setLoadMsg('Loading region list...');
-  const regText = await fetch(MAP_PATH + '/regions.txt').then(r => r.text());
-  const regions = regText.replaceAll('\r','').split('\n').map(r=>r.trim()).filter(Boolean);
-
   setLoadMsg('Loading region positions...');
   const posText = await fetch(MAP_PATH + '/region_pos.txt').then(r => r.text());
   posText.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line => {
@@ -384,75 +386,43 @@ async function loadData() {
     if (k && v) regionPos[k.trim()] = v.split('x').map(Number);
   });
 
-  // Init offsets to zero
-  regions.forEach(r => {
-    const key = r.split('-')[0];
+  setLoadMsg('Loading map data...');
+  const mdRes = await fetch(MAP_DATA_URL);
+  if (!mdRes.ok) throw new Error(`${MAP_DATA_URL} introuvable (${mdRes.status}) — lance precompile-map.py`);
+  const mapData = await mdRes.json();
+  const regions = Object.keys(mapData.rooms);
+
+  // Init offsets to zero (toutes les régions de region_pos.txt, même sans rooms comme GW)
+  new Set([...Object.keys(regionPos), ...regions]).forEach(key => {
     if (!regionOffset[key]) regionOffset[key] = [0, 0];
-    regionRooms[key] = [];
   });
-
-  setLoadMsg('Loading room lists...');
-  await Promise.all(regions.map(async region => {
-    const key = region.split('-')[0]; // e.g. "CC-rooms" → "CC"
-
-    // Try both filename conventions: cf-CC-rooms.txt and cf-CC.txt
-    const attempts = [
-      `${MAP_PATH}/${region}/cf-${region}.txt`,
-      `${MAP_PATH}/${region}/cf-${key}.txt`,
-    ];
-
-    let loaded = false;
-    for (const url of attempts) {
-      try {
-        const r = await fetch(url);
-        if (!r.ok) continue;
-        const data = await r.text();
-        const roomNames = data.split('\n').map(r=>r.trim()).filter(Boolean);
-        if (roomNames.length) roomNames.pop();
-        regionRooms[key] = regionRooms[key] || [];
-        regionRooms[key]._names = roomNames;
-        regionRooms[key]._region = region;
-        console.log(`Loaded room list for ${key} from ${url} (${roomNames.length} rooms)`);
-        loaded = true;
-        break;
-      } catch(e) {}
-    }
-    if (!loaded) console.warn(`Could not load room list for ${region} (tried: ${attempts.join(', ')})`);
-  }));
+  regions.forEach(key => { regionRooms[key] = []; });
 
   setLoadMsg('Loading room geometry...');
-  let loaded = 0, total = 0;
-  const allRegionKeys = Object.keys(regionRooms);
+  const geometry = await loadGeometry(regions);
 
-  // Count total rooms
-  allRegionKeys.forEach(key => {
-    total += (regionRooms[key]._names || []).length;
+  let missingGeo = 0;
+  regions.forEach(key => {
+    mapData.rooms[key].forEach(room => {
+      const roomName = room.fullName.toLowerCase();   // même format de clé qu'avant : "su_b04"
+      const geo = geometry[roomName];
+      if (!geo) missingGeo++;
+      const parsed = {
+        regionKey: key,
+        roomName,
+        key: `${key}/${roomName}`,
+        pos_x: room.position.x,
+        pos_y: room.position.y,
+        width:  geo ? geo.w : room.width,    // la géométrie fait foi pour la taille
+        height: geo ? geo.h : room.height,
+        segs:   geo ? geometryToSegs(geo) : []
+      };
+      regionRooms[key].push(parsed);
+      allRoomData[parsed.key] = parsed;
+      if (!roomOffset[parsed.key]) roomOffset[parsed.key] = [0, 0];
+    });
   });
-
-  await Promise.all(allRegionKeys.map(async key => {
-    const region = regionRooms[key]._region;
-    if (!region) return;
-    const names  = regionRooms[key]._names || [];
-    regionRooms[key] = []; // reset to array of parsed rooms
-
-    for (let roomName of names) {
-      if (roomName.endsWith('.txt')) roomName = roomName.slice(0,-4);
-      if (!roomName) continue;
-      try {
-        const resp = await fetch(`${MAP_PATH}/${region}/${roomName}.txt`);
-        if (!resp.ok) continue;
-        const data = await resp.text();
-        const parsed = parseRoom(data, key, roomName);
-        if (parsed) {
-          regionRooms[key].push(parsed);
-          allRoomData[`${key}/${roomName}`] = parsed;
-          if (!roomOffset[`${key}/${roomName}`]) roomOffset[`${key}/${roomName}`] = [0,0];
-        }
-      } catch(e) {}
-      loaded++;
-      if (loaded % 20 === 0) setLoadMsg(`Loading rooms... ${loaded}/${total}`);
-    }
-  }));
+  if (missingGeo) console.warn(`${missingGeo} room(s) sans géométrie (boîte seule affichée)`);
 
   // Compute region bounding boxes
   computeRegionBounds();
@@ -460,40 +430,39 @@ async function loadData() {
     `regions: ${Object.keys(regionPos).length} · rooms: ${Object.keys(allRoomData).length}`;
 }
 
-function parseRoom(data, regionKey, roomName) {
-  const lines = data.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-  if (lines.length < 3) return null;
-
-  // Normalise line 1: strip "taille : " prefix, replace * with x, take only first segment
-  // Handles: "54x35", "taille : 54x35", "54*35|-1|0"
-  let dimLine = lines[1]
-    .replace(/^taille\s*:\s*/i, '')  // strip French prefix
-    .replace('*', 'x')               // normalise * separator
-    .split('|')[0]                   // take only first segment (ignore extra fields)
-    .trim();
-
-  const [width, height] = dimLine.split('x').map(Number);
-
-  // Line 2 must look like "NUMxNUM" — skip files where it's ASCII art or raw game data
-  let posLine = lines[2].split('x');
-  const pos_x = parseFloat(posLine[0]);
-  const pos_y = parseFloat(posLine[1]);
-
-  if (isNaN(width) || isNaN(height) || isNaN(pos_x) || isNaN(pos_y)) {
-    console.warn(`Bad header in ${regionKey}/${roomName} — line1: "${lines[1]}" line2: "${lines[2]}"`);
-    return null;
+// Charge json/geometry/<jeu>/<REGION>.json pour toutes les régions → { "su_b04": {w,h,solid,floors,...} }
+async function loadGeometry(regions) {
+  const out = {};
+  for (const set of GEOMETRY_SETS) {            // priorité : le 1er jeu qui contient la room gagne
+    const files = await Promise.all(regions.map(region =>
+      fetch(`${GEOMETRY_BASE}/${set}/${region.toUpperCase()}.json`)
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null)
+    ));
+    files.filter(Boolean).forEach(file => {
+      Object.entries(file).forEach(([k, g]) => {
+        const name = k.toLowerCase();
+        if (!(name in out)) out[name] = g;
+      });
+    });
   }
+  return out;
+}
 
-  // Parse geometry segments (last 6 lines before end)
-  const segs = lines.slice(-7,-1).flatMap(line =>
-    line === 'None|' ? [] :
-    line.split('|').map(p=>p.trim()).filter(Boolean).map(pair => {
-      const [lx1,ly1,lx2,ly2] = pair.replace(/[()]/g,'').split(',').map(Number);
-      return { lx1, ly1, lx2, ly2 };
-    })
-  );
-
-  return { regionKey, roomName, key: `${regionKey}/${roomName}`, pos_x, pos_y, width, height, segs };
+// Géométrie JSON → segments locaux { lx1, ly1, lx2, ly2 } (tuiles, Y vers le bas depuis le coin haut-gauche),
+// le même format que l'ancien parseRoom() : drawStep2 fait y = baseY - ly.
+function geometryToSegs(geo) {
+  const segs = [];
+  (geo.solid || []).forEach(poly => {             // contour fermé de chaque polygone de murs
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      segs.push({ lx1: a[0], ly1: a[1], lx2: b[0], ly2: b[1] });
+    }
+  });
+  [geo.floors, geo.poles_v, geo.poles_h].forEach(list => {
+    (list || []).forEach(s => segs.push({ lx1: s[0], ly1: s[1], lx2: s[2], ly2: s[3] }));
+  });
+  return segs;
 }
 
 function computeRegionBounds() {

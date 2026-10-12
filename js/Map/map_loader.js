@@ -37,6 +37,40 @@ let regionPosCache = {};   // { "CC": [x, y], ... } — lu par connection_loader
 let mapData = null;
 const geometryByKey = {};  // "cc_b10" → géométrie (toutes régions confondues)
 
+const OFFSETS_URL = "../json/room_offsets.txt";   // adapte le chemin
+const roomOffsets = {};                           // "cc_a02" → [dx, dy]
+
+async function loadOffsets() {
+    try {
+        const res = await fetch(OFFSETS_URL);
+        if (!res.ok) throw new Error(res.status);
+        for (const line of (await res.text()).split("\n")) {
+            const m = line.trim().match(/^[^/]+\/([^:]+):(-?\d+)x(-?\d+)$/i);   // "CC/cc_a02:36x36"
+            if (m) roomOffsets[m[1].toLowerCase()] = [parseInt(m[2]), parseInt(m[3])];
+        }
+        console.log(`Offsets loaded: ${Object.keys(roomOffsets).length} rooms`);
+    } catch (err) {
+        console.warn("Offsets non chargés :", err);
+    }
+}
+
+const REGION_POS_URL = "../json/region_pos.txt";   // adapte le chemin
+const regionOffsets = {};                          // "CC" → [x, y]
+
+async function loadRegionPos() {
+    try {
+        const res = await fetch(REGION_POS_URL);
+        if (!res.ok) throw new Error(res.status);
+        for (const line of (await res.text()).split("\n")) {
+            const m = line.trim().match(/^(\w+):(-?\d+)x(-?\d+)$/);   // "CC:890x1722"
+            if (m) regionOffsets[m[1].toUpperCase()] = [parseInt(m[2]), parseInt(m[3])];
+        }
+        console.log(`Region positions loaded: ${Object.keys(regionOffsets).length}`);
+    } catch (err) {
+        console.warn("region_pos.txt non chargé :", err);
+    }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
     loadMap();
 });
@@ -61,6 +95,17 @@ async function loadMap() {
 
         // 3. Shader prêt (render.js a déjà créé le contexte gl au DOMContentLoaded)
         initRender();
+
+        await Promise.all([loadOffsets(), loadRegionPos()]);
+
+        // Les positions du fichier remplacent celles de map-data.json
+        for (const [region, [x, y]] of Object.entries(regionOffsets)) {
+            regionPosCache[region] = [x, y];
+            if (mapData.regionPositions[region]) {
+                mapData.regionPositions[region].x = x;
+                mapData.regionPositions[region].y = y;
+            }
+        }
 
         // 4. Construction et dessin des couches
         buildAndRenderLayers();
@@ -127,8 +172,9 @@ function buildAndRenderLayers() {
             const nameLower = room.fullName.toLowerCase();
 
             // Origine haut-gauche en repère carte (Y vers le haut) — voir l'en-tête
-            const ox = room.position.x / 2 + rp.x;
-            const oy = room.position.y / 2 + rp.y;
+            const [dx, dy] = roomOffsets[nameLower] || [0, 0];
+            const ox = room.position.x / 2 + rp.x + dx;
+            const oy = room.position.y / 2 + rp.y + dy;   // Y carte = vers le haut
 
             const geo = geometryByKey[nameLower];
             // La géométrie fait foi pour la taille quand elle existe
