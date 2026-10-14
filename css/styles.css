@@ -92,9 +92,9 @@ button {
 aside{
   display: flex;
   position: relative;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+  justify-content: space-between;
+  flex-direction: row;
+  margin-right: 10px;
 }
 
 img{
