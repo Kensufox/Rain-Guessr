@@ -8,7 +8,7 @@ The map will be show in one layer (not like in Rain World), but it will probably
 
 ## Online version
 
-https://quilliec-matisse-24019562.github.io/Rain-Guessr/
+https://kensufox.github.io/Rain-Guessr/
 
 
 ## Offline instructions
