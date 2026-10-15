@@ -1,8 +1,3 @@
-/**
- * SVG-based Room Renderer for Rain-Guessr
- * Uses precompiled map data for fast loading, with fallback to original method
- */
-
 const RoomRenderer = {
   // Configuration
   TILE_SIZE: 15,
@@ -17,27 +12,18 @@ const RoomRenderer = {
     'H': '#ff6600',
   },
 
-  // Géométrie vectorielle (produite par convert_rooms.py)
   GEOMETRY_BASE: '../json/geometry',
-  // Jeux utilisés, par ordre de priorité. Plus tard : ['downpour', 'vanilla']
-  // (une room Downpour remplace la room vanilla du même nom).
   GEOMETRY_SETS: ['vanilla'],
-  geometry: {}, // { jeu: { REGION: { nom_de_room: géométrie } } }
-
-  // Cache for loaded rooms
+  geometry: {},
   roomsCache: {},
   regionPositions: {},
-  allRooms: {}, // Store all loaded room data
-  precompiledData: null, // Precompiled map data
-  usePrecompiled: false, // Flag to use precompiled data
+  allRooms: {},
+  precompiledData: null,
+  usePrecompiled: false,
 
-  /**
-   * Initialize the renderer
-   */
   async init() {
     console.log('Initializing Room Renderer...');
     try {
-      // Try to load precompiled data first
       const precompiled = await this.loadPrecompiledData();
       
       if (precompiled && precompiled.rooms && Object.keys(precompiled.rooms).length > 0) {
@@ -54,7 +40,6 @@ const RoomRenderer = {
         console.log('Precompiled data is incomplete or empty');
       }
       
-      // Fallback to original loading method
       console.log('Precompiled data not available, loading from files');
       this.usePrecompiled = false;
       await this.loadRegionPositions();
@@ -67,10 +52,6 @@ const RoomRenderer = {
     }
   },
 
-  /**
-   * Charge les fichiers de géométrie : un fichier par région et par jeu.
-   * Un fichier absent n'est pas une erreur (la room garde son cadre vert).
-   */
   async loadGeometry() {
     const regions = Object.keys(this.allRooms);
     const jobs = [];
@@ -92,14 +73,10 @@ const RoomRenderer = {
     console.log(`Geometry loaded: ${n} rooms`);
   },
 
-  /**
-   * Géométrie d'une room, ou null. Clé = nom complet en minuscules (ex: "cc_a02").
-   */
   getGeometry(roomData) {
     const key = (roomData.fullName || `${roomData.regionCode}_${roomData.name}`).toLowerCase();
     for (const set of this.GEOMETRY_SETS) {
       const byRegion = this.geometry[set] || {};
-      // la région du fichier n'est pas toujours le préfixe du nom : on cherche partout
       const own = byRegion[(roomData.regionCode || '').toUpperCase()];
       if (own && own[key]) return own[key];
       for (const rooms of Object.values(byRegion)) if (rooms[key]) return rooms[key];
@@ -107,10 +84,6 @@ const RoomRenderer = {
     return null;
   },
 
-  /**
-   * Construit le dessin SVG d'une room à partir de sa géométrie.
-   * Les coordonnées du JSON sont en tuiles ; on les multiplie par TILE_SIZE.
-   */
   buildGeometryGroup(geo, worldX, worldY) {
     const NS = 'http://www.w3.org/2000/svg';
     const T = this.TILE_SIZE;
@@ -121,13 +94,11 @@ const RoomRenderer = {
     };
     const g = make('g', { class: 'room-geo', transform: `translate(${worldX} ${worldY})` });
 
-    // Contour de la room (discret, utile pour voir les limites)
     g.appendChild(make('rect', {
       class: 'geo-bounds', x: 0, y: 0, width: geo.w * T, height: geo.h * T,
       fill: 'none', stroke: '#0f0', 'stroke-opacity': '0.35', 'stroke-width': 1
     }));
 
-    // Murs : un seul <path>, 'evenodd' pour que les trous restent vides
     if (geo.solid.length) {
       const d = geo.solid
         .map(poly => 'M' + poly.map(([x, y]) => `${x * T} ${y * T}`).join('L') + 'Z')
@@ -135,7 +106,6 @@ const RoomRenderer = {
       g.appendChild(make('path', { class: 'geo-solid', d, 'fill-rule': 'evenodd', fill: '#555' }));
     }
 
-    // Segments (sols traversables, poteaux) : un seul <path> par type
     const lines = (segs, cls, stroke, width) => {
       if (!segs.length) return;
       const d = segs.map(([x1, y1, x2, y2]) => `M${x1 * T} ${y1 * T}L${x2 * T} ${y2 * T}`).join('');
@@ -147,7 +117,6 @@ const RoomRenderer = {
     lines(geo.poles_v, 'geo-pole', '#78c8ff', 2);
     lines(geo.poles_h, 'geo-pole', '#78c8ff', 2);
 
-    // Entrées de raccourcis
     if (geo.shortcuts.length) {
       const d = geo.shortcuts
         .map(([x, y]) => `M${x * T + 3} ${y * T + 3}h${T - 6}v${T - 6}h${6 - T}Z`).join('');
@@ -156,9 +125,6 @@ const RoomRenderer = {
     return g;
   },
 
-  /**
-   * Load precompiled map data
-   */
   async loadPrecompiledData() {
     try {
       console.log('Attempting to fetch ../json/map-data.json');
@@ -180,9 +146,6 @@ const RoomRenderer = {
     }
   },
 
-  /**
-   * Load region positions from file
-   */
   async loadRegionPositions() {
     try {
       const response = await fetch('../map/World/Regions/Rooms/region_pos.txt');
@@ -212,9 +175,6 @@ const RoomRenderer = {
     }
   },
 
-  /**
-   * Load metadata for all rooms (just the list of rooms per region)
-   */
   async loadAllRoomMetadata() {
     try {
       const response = await fetch('../map/World/Regions/Rooms/regions.txt');
@@ -227,7 +187,6 @@ const RoomRenderer = {
 
       console.log('Regions found:', regions);
 
-      // Load room list for each region in parallel
       await Promise.all(regions.map(region => this.loadRegionRoomList(region)));
       
       return this.allRooms;
@@ -237,12 +196,8 @@ const RoomRenderer = {
     }
   },
 
-  /**
-   * Load the list of rooms for a specific region
-   */
   async loadRegionRoomList(region) {
     try {
-      // Convert region folder name (e.g., "CC-rooms") to region code (e.g., "CC")
       const regionCode = region.replace('-rooms', '');
       const fileToLoad = `../map/World/Regions/Rooms/${region}/cf-${regionCode}-rooms.txt`;
 
@@ -256,7 +211,7 @@ const RoomRenderer = {
       const roomNames = (await response.text())
         .split('\n')
         .map(r => r.trim())
-        .filter(r => r && !r.startsWith('cf-')); // Filter out list filenames
+        .filter(r => r && !r.startsWith('cf-'));
 
       this.allRooms[regionCode] = roomNames;
       console.log(`Loaded ${roomNames.length} rooms for ${regionCode}`);
@@ -266,19 +221,14 @@ const RoomRenderer = {
     }
   },
 
-  /**
-   * Load a single room's geometry
-   */
   async loadRoomGeometry(regionCode, roomName) {
     const cacheKey = `${regionCode}_${roomName}`;
     
-    // Return from cache if available
     if (this.roomsCache[cacheKey]) {
       return this.roomsCache[cacheKey];
     }
 
     try {
-      // Room name may already include .txt, so we need to handle that
       const cleanRoomName = roomName.endsWith('.txt') ? roomName.slice(0, -4) : roomName;
       const filePath = `../map/World/Regions/Rooms/${regionCode}-rooms/${cleanRoomName}.txt`;
       const response = await fetch(filePath);
@@ -291,7 +241,6 @@ const RoomRenderer = {
       const text = await response.text();
       const roomData = this.parseRoomFile(text, regionCode, cleanRoomName);
       
-      // Cache the parsed room
       this.roomsCache[cacheKey] = roomData;
       return roomData;
     } catch (error) {
@@ -300,9 +249,6 @@ const RoomRenderer = {
     }
   },
 
-  /**
-   * Parse room file content
-   */
   parseRoomFile(fileContent, regionCode, roomName) {
     const lines = fileContent.split('\n');
     let roomData = {
@@ -321,49 +267,39 @@ const RoomRenderer = {
     for (const line of lines) {
       const trimmed = line.trim();
 
-      // Parse room name
       if (trimmed.startsWith('Piece :')) {
         roomData.fullName = trimmed.replace('Piece :', '').trim();
       }
 
-      // Parse size
       else if (/^\d+x\d+$/.test(trimmed)) {
         const [w, h] = trimmed.split('x').map(Number);
         roomData.width = w;
         roomData.height = h;
       }
 
-      // Parse position
       else if (/^-?\d+x-?\d+$/.test(trimmed)) {
         const [x, y] = trimmed.match(/-?\d+/g).map(Number);
         roomData.position = { x, y };
       }
 
-      // Collect tile lines (the ASCII map)
       else if (!geometryStarted && (trimmed.match(/^[.#|+\-=HV\/]/))) {
         tileLines.push(line);
       }
 
-      // Parse geometry connections (lines with parentheses and pipes)
       else if (trimmed.includes('(') && trimmed.includes('|')) {
         roomData.geometry.push(trimmed);
         geometryStarted = true;
       }
 
-      // Stop at end marker
       else if (trimmed === 'end file : ' + roomData.fullName) {
         break;
       }
     }
 
-    // Store the tile map
     roomData.tileMap = tileLines;
     return roomData;
   },
 
-  /**
-   * Render room geometry to a canvas image (room outline only)
-   */
   renderRoomToCanvas(roomData) {
     if (!roomData || !roomData.width || !roomData.height) {
       return null;
@@ -377,11 +313,9 @@ const RoomRenderer = {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    // Transparent background
     ctx.fillStyle = 'rgba(0, 0, 0, 0)';
     ctx.fillRect(0, 0, width, height);
 
-    // Draw only the room border with thicker line
     ctx.strokeStyle = '#0f0';
     ctx.lineWidth = 6;
     ctx.strokeRect(3, 3, width - 6, height - 6);
@@ -389,24 +323,18 @@ const RoomRenderer = {
     return canvas;
   },
 
-  /**
-   * Render a single room to SVG as an image element
-   */
   renderRoomToSVG(roomData, svgGroup) {
     if (!roomData || !roomData.width || !roomData.height) {
       console.warn('Invalid room data:', roomData);
       return null;
     }
 
-    // Get world position
     let worldX, worldY;
     
     if (this.usePrecompiled && roomData.worldPos) {
-      // Use precompiled world position
       worldX = roomData.worldPos.x;
       worldY = roomData.worldPos.y;
     } else {
-      // Calculate from region position and room position
       const regionPos = this.regionPositions[roomData.regionCode];
       if (!regionPos) {
         console.warn(`No position data for region ${roomData.regionCode}`);
@@ -416,7 +344,6 @@ const RoomRenderer = {
       worldY = (regionPos.y + roomData.position.y) * this.TILE_SIZE;
     }
 
-    // Géométrie vectorielle si disponible, sinon l'ancien cadre vert (canvas)
     const geo = this.getGeometry(roomData);
     let pxW, pxH, drawing;
     if (geo) {
@@ -437,7 +364,6 @@ const RoomRenderer = {
       drawing.setAttribute('class', 'room-image');
     }
 
-    // Create a group for this room
     const roomGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     roomGroup.setAttribute('class', 'room-group');
     roomGroup.setAttribute('data-room', roomData.fullName || roomData.name);
@@ -448,7 +374,6 @@ const RoomRenderer = {
     roomGroup.setAttribute('data-height', pxH);
     roomGroup.appendChild(drawing);
 
-    // Add invisible rect for hit detection
     const hitRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     hitRect.setAttribute('x', worldX.toString());
     hitRect.setAttribute('y', worldY.toString());
@@ -458,7 +383,6 @@ const RoomRenderer = {
     hitRect.setAttribute('class', 'room-hit-area');
     roomGroup.appendChild(hitRect);
 
-    // Add room label
     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     label.setAttribute('x', (worldX + pxW / 2).toString());
     label.setAttribute('y', (worldY + pxH / 2).toString());
@@ -472,7 +396,6 @@ const RoomRenderer = {
     label.textContent = roomData.name || (roomData.fullName && roomData.fullName.split('_')[1]) || '';
     roomGroup.appendChild(label);
 
-    // Add to SVG
     if (svgGroup) {
       svgGroup.appendChild(roomGroup);
     }
@@ -480,13 +403,9 @@ const RoomRenderer = {
     return roomGroup;
   },
 
-  /**
-   * Render all rooms for a region (with limited parallelism to avoid blocking)
-   */
   async renderRegion(regionCode, svgGroup) {
     console.log(`Rendering region ${regionCode}...`);
     
-    // Get rooms for this region
     const roomsData = this.allRooms[regionCode] || [];
     
     if (roomsData.length === 0) {
@@ -495,13 +414,11 @@ const RoomRenderer = {
     }
 
     let renderedCount = 0;
-    const batchSize = 50; // Render 50 rooms at a time (now that rendering is very fast)
+    const batchSize = 50;
 
-    // Process rooms in batches
     for (let i = 0; i < roomsData.length; i += batchSize) {
       const batch = roomsData.slice(i, i + batchSize);
       
-      // Render batch in parallel
       const renderPromises = batch.map(async (roomData) => {
         try {
           if (roomData && roomData.width > 0 && roomData.height > 0) {
@@ -517,7 +434,6 @@ const RoomRenderer = {
       const results = await Promise.all(renderPromises);
       renderedCount += results.reduce((sum, val) => sum + val, 0);
       
-      // Allow UI to update between batches (less frequent now)
       await new Promise(resolve => setTimeout(resolve, 5));
     }
 
@@ -525,19 +441,14 @@ const RoomRenderer = {
     return renderedCount;
   },
 
-  /**
-   * Render all available regions (with limited parallelism to prevent blocking)
-   */
   async renderAllRegions(svgGroup) {
     console.log('Rendering all regions...');
     const regions = Object.keys(this.allRooms);
     
-    // Render all 11 regions in parallel now that data is lightweight
     let totalRooms = 0;
 
-    const regionBatch = regions.slice(0, 11); // All regions at once
+    const regionBatch = regions.slice(0, 11);
     
-    // Render all regions in parallel
     const renderPromises = regionBatch.map(region => this.renderRegion(region, svgGroup));
     const counts = await Promise.all(renderPromises);
     
@@ -547,9 +458,6 @@ const RoomRenderer = {
     return totalRooms;
   },
 
-  /**
-   * Get room info by coordinates
-   */
   getRoomAtPoint(x, y, svgGroup) {
     if (!svgGroup) return null;
 
@@ -574,7 +482,6 @@ const RoomRenderer = {
   }
 };
 
-// Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = RoomRenderer;
 }

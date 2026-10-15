@@ -6,6 +6,13 @@ It will work by taking a random part of a random screenshot of a room, and with 
 
 The map will be show in one layer (not like in Rain World), but it will probably be an option to switch to the classic 3 layer map
 
+## Online version
+
+https://quilliec-matisse-24019562.github.io/Rain-Guessr/
+
+
+## Offline instructions
+
 Going on the site, you will have a menu very similar to the main menu of rain world, It have multiple button: Play, Account, Setting, Credit, Help
 -The play button lead you to the selection page, it allow you to choose the game mode (more about it bellow), and the difficulty
 -The account button will allow you to login/disconnect/create an account and see data linked to it
