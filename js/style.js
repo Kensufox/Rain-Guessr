@@ -42,3 +42,21 @@ document.addEventListener("DOMContentLoaded", function () {
 		});
 	});
 });
+
+function refuse(button) {
+	const target = button.querySelector("#text-button");
+	if (!target || target.classList.contains("refused")) {
+		return;
+	}
+	if (!button || button.classList.contains("refused")) {
+		return;
+	}
+
+	target.classList.add("refused");
+	button.classList.add("refused");
+
+	setTimeout(function () {
+		target.classList.remove("refused");
+		button.classList.remove("refused");
+	}, 500);
+}
