@@ -310,6 +310,11 @@
 // ============================================================
 const MAP_PATH = '../map/World/Regions/Rooms';
 
+// Positions ACTUELLES de la carte (celles que map-room.html utilise) : ce sont les fichiers exportés par cet
+// éditeur. L'ancien region_pos.txt (MAP_PATH) ne sert plus que de secours si json/region_pos.txt manque.
+const REGION_POS_URL   = '../json/region_pos.txt';
+const ROOM_OFFSETS_URL = '../json/room_offsets.txt';
+
 // Même source que map-room.html : positions des rooms (map-data.json) + géométrie JSON par région.
 // map-data.json est généré par precompile-map.py (à relancer après avoir remplacé region_pos.txt).
 const MAP_DATA_URL  = '../json/map-data.json';
@@ -332,7 +337,7 @@ let isPanning = false, panStartX = 0, panStartY = 0;
 let regionPos    = {};   // { CC: [x,y], ... }  — original from file
 let regionOffset = {};   // { CC: [dx,dy], ... } — editor adjustments
 let roomOffset   = {};   // { "CC/cc_a01": [dx,dy], ... }
-
+let roomOffsetInitial = {};   // décalages chargés depuis json/room_offsets.txt : retour de "Reset" 
 let regionRooms  = {};   // { CC: [ {key,pos_x,pos_y,width,height,segs}, ... ] }
 let regionBounds = {};   // { CC: {minX,minY,maxX,maxY} } in map space (before offset)
 let allRoomData  = {};   // key → {pos_x,pos_y,width,height,segs,region}
@@ -380,11 +385,28 @@ function setLoadMsg(msg) {
 // ============================================================
 async function loadData() {
   setLoadMsg('Loading region positions...');
-  const posText = await fetch(MAP_PATH + '/region_pos.txt').then(r => r.text());
+  let posRes = await fetch(REGION_POS_URL).catch(() => null);
+  if (!posRes || !posRes.ok) {
+    console.warn(`${REGION_POS_URL} introuvable → ancien ${MAP_PATH}/region_pos.txt (positions de base)`);
+    posRes = await fetch(MAP_PATH + '/region_pos.txt');
+  }
+  const posText = await posRes.text();
   posText.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line => {
     const [k,v] = line.split(':');
     if (k && v) regionPos[k.trim()] = v.split('x').map(Number);
   });
+
+  // Décalages de rooms actuels (même format que l'export : "CC/cc_a02:36x36"), indexés par nom de room
+  const savedRoomOffsets = {};
+  try {
+    const offRes = await fetch(ROOM_OFFSETS_URL);
+    if (offRes.ok) {
+      (await offRes.text()).split('\n').forEach(line => {
+        const m = line.trim().match(/^[^/]+\/([^:]+):(-?\d+)x(-?\d+)$/);
+        if (m) savedRoomOffsets[m[1].toLowerCase()] = [parseInt(m[2]), parseInt(m[3])];
+      });
+    }
+  } catch (e) { console.warn('room_offsets.txt non chargé :', e); }
 
   setLoadMsg('Loading map data...');
   const mdRes = await fetch(MAP_DATA_URL);
@@ -419,7 +441,9 @@ async function loadData() {
       };
       regionRooms[key].push(parsed);
       allRoomData[parsed.key] = parsed;
-      if (!roomOffset[parsed.key]) roomOffset[parsed.key] = [0, 0];
+      const saved = savedRoomOffsets[roomName] || [0, 0];
+      roomOffset[parsed.key]        = [...saved];
+      roomOffsetInitial[parsed.key] = [...saved];
     });
   });
   if (missingGeo) console.warn(`${missingGeo} room(s) sans géométrie (boîte seule affichée)`);
@@ -793,16 +817,16 @@ function resetSelected() {
     regionOffset[selectedRegion] = [0,0];
     updateCoordInputs();
   } else if (step===2 && selectedRoom) {
-    roomOffset[selectedRoom] = [0,0];
+    roomOffset[selectedRoom] = [...(roomOffsetInitial[selectedRoom] || [0,0])];   // = valeur chargée
     updateCoordInputs();
   }
   draw();
 }
 
 function resetAll() {
-  if (!confirm('Reset ALL positions to original?')) return;
+  if (!confirm('Reset ALL positions to the loaded ones (json/region_pos.txt + json/room_offsets.txt)?')) return;
   Object.keys(regionOffset).forEach(k => regionOffset[k] = [0,0]);
-  Object.keys(roomOffset).forEach(k   => roomOffset[k]   = [0,0]);
+  Object.keys(roomOffset).forEach(k   => roomOffset[k]   = [...(roomOffsetInitial[k] || [0,0])]);
   updateCoordInputs();
   draw();
 }
