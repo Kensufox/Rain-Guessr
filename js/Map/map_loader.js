@@ -111,9 +111,13 @@ async function loadMap() {
         buildAndRenderLayers();
 
         // 5. Connexions
-        await Promise.all(Object.keys(mapData.rooms).map(region =>
-            loadConnections(`${region}-rooms`, regionPosCache)
-        ));
+        //await Promise.all(Object.keys(mapData.rooms).map(region =>
+        //    loadConnections(`${region}-rooms`, regionPosCache)
+        //));
+        // 5. Connexions : un seul appel, tous les fichiers fusionnés
+        const folders = Object.keys(mapData.rooms).map(r => r ? `${r}-rooms` : "Gate-rooms");
+        if (!folders.includes("Gate-rooms")) folders.push("Gate-rooms");
+        await loadConnections(folders);
 
         // Premier affichage : envoie pan/zoom au shader et dessine tout (géométrie + connexions + overlay)
         if (typeof applyTransform === "function") applyTransform();
