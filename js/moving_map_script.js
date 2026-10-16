@@ -47,7 +47,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
 
     canvasEl.addEventListener('mousedown', (e) => {
-        if (e.button !== 2) return;
+        if (e.button !== 0) return;
         e.preventDefault();
         isDragging = true;
         document.body.style.cursor = 'grabbing';
@@ -68,7 +68,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('mouseup', (e) => {
-        if (e.button !== 2) return;
+        if (e.button !== 0) return;
         isDragging = false;
         document.body.style.cursor = '';
     });
