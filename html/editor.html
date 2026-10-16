@@ -434,7 +434,7 @@ async function loadData() {
 async function loadGeometry(regions) {
   const out = {};
   for (const set of GEOMETRY_SETS) {            // priorité : le 1er jeu qui contient la room gagne
-    const files = await Promise.all(regions.map(region =>
+    const files = await Promise.all([...regions, 'GATES'].map(region =>   // GATES.json : géométrie des gates
       fetch(`${GEOMETRY_BASE}/${set}/${region.toUpperCase()}.json`)
         .then(r => (r.ok ? r.json() : null))
         .catch(() => null)
@@ -442,6 +442,7 @@ async function loadGeometry(regions) {
     files.filter(Boolean).forEach(file => {
       Object.entries(file).forEach(([k, g]) => {
         const name = k.toLowerCase();
+        if (name.includes('(')) return;   // ex. gate_lf_su(error!)
         if (!(name in out)) out[name] = g;
       });
     });

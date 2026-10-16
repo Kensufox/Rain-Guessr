@@ -53,7 +53,7 @@ async function loadConnections(region, regionPosCache) {
 
             if (!roomB || !posStr) continue;
 
-            if (roomB.startsWith('gate_')) continue;
+            // Les gates sont maintenant sur la carte : la ligne va jusqu'au centre de la gate (voir plus bas)
 
             const [tileX, tileY] = posStr.toLowerCase().split('x').map(Number); // accepte aussi "22X197"
 

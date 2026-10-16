@@ -130,7 +130,8 @@ async function loadMap() {
 async function loadGeometry(regions) {
     // Tout en parallèle, puis fusion dans l'ordre de priorité des jeux
     const results = await Promise.all(GEOMETRY_SETS.map(async set => {
-        const perRegion = await Promise.all(regions.map(region =>
+        // + GATES.json : géométrie des gates (GATE_CC_UW...), listées dans map-data.json avec "gate": true
+        const perRegion = await Promise.all([...regions, "GATES"].map(region =>
             fetch(`${GEOMETRY_BASE}/${set}/${region.toUpperCase()}.json`)
                 .then(r => (r.ok ? r.json() : null))
                 .catch(() => null)
@@ -142,6 +143,7 @@ async function loadGeometry(regions) {
         for (const file of files) {
             for (const [key, geo] of Object.entries(file)) {
                 const k = key.toLowerCase();
+                if (k.includes("(")) continue;   // ex. "gate_lf_su(error!)"
                 // le 1er jeu de la liste gagne
                 if (!(k in geometryByKey)) geometryByKey[k] = geo;
             }
