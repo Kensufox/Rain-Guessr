@@ -44,7 +44,3 @@ uw_s04|1|uw_d07|24x25|S
 uw_s05|1|uw_d02|19x16|W
 uw_s06|1|uw_a09|10x16|N
 uw_s07|1|uw_b01|22x19|E
-gate_cc_uw|1|uw_d07|28x43|S
-gate_sh_uw|1|uw_d02|11x43|N
-gate_ss_uw|1|uw_c07|25x2|W
-gate_uw_ss|1|uw_c08|25x2|W
