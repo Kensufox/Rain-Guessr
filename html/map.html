@@ -43,7 +43,7 @@
         </div>
         <p id="timer">Time left: <span id="time-remaining">00:00</span></p>
         <!--<button id="btn-mode" onclick="toggleDifficulty()" title="Normal : extraits visibles. Difficile : extraits totalement aléatoires (peuvent être noirs)">MODE : NORMAL</button>
-    --><button id="btn-validate" disabled onclick="onValidate()">VALIDER</button>
+    --><button id="btn-validate" disabled onclick="onValidate()">GUESS</button>
     </div>
 
     <!-- Toggle button — always visible -->
@@ -130,7 +130,7 @@
             img.classList.add("loading");
             img.src = "";
             validateBtn.disabled  = true;
-            validateBtn.textContent = "VALIDER";
+            validateBtn.textContent = "GUESS";
             validateBtn.style.borderColor = "";
             validateBtn.style.color       = "";
             selName.textContent = "—";
@@ -156,6 +156,8 @@
                 let totalScore = result.points;
                 console.log(`Points earned: ${totalScore}`);
                 locateRoom();
+                clearInterval(timerInterval);
+                document.getElementById("time-remaining").textContent = '00:00';
                 //showResult(result);
             }
             const btn = document.getElementById("btn-validate");
