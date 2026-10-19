@@ -1,53 +1,153 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Let's play Rain Guessr.">
-    <title>Rain Guessr - Map</title>
-    <link id="stylesheet" rel="stylesheet" href='../css/style-map.css'>
-<!--
-<body>
-    <div id="ui-container">
-        <button id="return-btn"><a href="../index.html">RETURN</a></button>
-        <div id="room-info" class="hidden">
-            <span id="room-name">Room Name</span>
-        </div>
-        <div id="score-info">
-            <p>Click a room to select it</p>
-        </div>
-    -->
-    <script src="../js/style.js" defer></script>
-    <link rel="icon" href="../pictures/ico/survivor_head1.ico"> 
+    <meta name="description" content="Rain Guessr">
+    <title>Rain Guessr</title>
+    <link id="stylesheet" rel="stylesheet" href='../css/map.css'>
+
+    <!-- Load order matters: render first basic, 
+         then (defines gl, canvas, renderRoom),
+         then map_loader (fetches data, calls renderRoom),
+         then room_detection (reads canvas + roomBoundaries) -->
+    <script src="../js/style.js"                   defer></script>
+    <script src="../js/Map/render.js"              defer></script>
+    <script src="../js/Map/map_loader.js"          defer></script>
+    <script src="../js/Map/room_detection.js"      defer></script>
+    <script src="../js/Map/connection_loader.js"   defer></script>
+    <script src="../js/moving_map_script.js"       defer></script>
+    <script src="../js/Map/room_locate.js"         defer></script>
+    <script src="../js/game.js"                    defer></script>
+
+    <link rel="icon" href="../pictures/ico/survivor_head1.ico">
 </head>
 <body>
-    <button><a href="../index.html" id="text-button">RETURN</a></button>
-    <div id="map-container">
-        <div id="map"></div>
-    </div>
-    
-    <div id="map-container">
-        <svg id="map-svg" width="20000" height="20000">
-            <!-- Background grid -->
-            <defs>
-                <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
-                    <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>
-                </pattern>
-            </defs>
-            <rect width="20000" height="20000" fill="#0a0a0a"/>
-            <rect width="20000" height="20000" fill="url(#grid)"/>
+
+    <!-- Map canvases -->
+    <button type="button"><a href="../index.html" id="text-button">BACK</a> </button>
             
-            <!-- Rooms will be rendered here -->
-            <g id="rooms-group"></g>
-            
-            <!-- Selected point will be drawn here -->
-            <g id="selection-group"></g>
-        </svg>
+    <div id="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+        <canvas id="canvas-connections"></canvas>
+        <canvas id="canvas-overlay"></canvas>
     </div>
 
-    <script src="../js/room-renderer.js" defer></script>
-    <script src="../js/map-init.js" defer></script>
-    <script src="../js/moving_map_script.js" defer></script>
+    <!-- Game UI -->
+    <div id="game-panel">
+        <img id="challenge-image" class="loading" alt="Challenge" src="">
+        <div id="selection-row">
+            <span id="selection-label">ROOM :</span>
+            <span id="selected-room-name">—</span>
+        </div>
+        <button id="btn-mode" onclick="toggleMode()" title="Normal : extraits visibles. Difficile : extraits totalement aléatoires (peuvent être noirs)">MODE : NORMAL</button>
+        <button id="btn-validate" disabled onclick="onValidate()">VALIDER</button>
+    </div>
+
+    <!-- Toggle button — always visible -->
+    <button id="btn-toggle-game" onclick="toggleGame()">▶ JOUER</button>
+
+    <!-- Hover tooltip -->
+    <div id="room-tooltip"></div>
+
+    <!-- Loading overlay (map load only, not game) -->
+    <div id="loading-overlay">CHARGEMENT...</div>
+
+    <script>
+        window.gameActive = false;
+        let mapReady = false;
+
+        // Map signals it's done loading
+        window.addEventListener("mapLoaded", () => {
+            mapReady = true;
+            document.getElementById("loading-overlay").classList.add("hidden");
+        });
+
+        async function toggleGame() {
+            const btn   = document.getElementById("btn-toggle-game");
+            const panel = document.getElementById("game-panel");
+
+            if (window.gameActive) {
+                // Deactivate
+                window.gameActive = false;
+                panel.classList.remove("visible");
+                btn.classList.remove("active");
+                btn.textContent = "▶ JOUER";
+
+                // Clear any selection left on the map
+                if (typeof clearSelection === "function") clearSelection();
+                document.getElementById("selected-room-name").textContent = "—";
+            } else {
+                // Activate — start a new round
+                if (!mapReady) return; // map not loaded yet, ignore
+                window.gameActive = true;
+                panel.classList.add("visible");
+                btn.classList.add("active");
+                btn.textContent = "■ STOP";
+
+                await newRound();
+            }
+        }
+
+        // ── Mode : NORMAL (extraits visibles) / DIFFICILE (extraits 100 % aléatoires) ──
+        function updateModeButton() {
+            const btn  = document.getElementById("btn-mode");
+            const hard = window.gameMode === "hard";
+            btn.textContent = hard ? "MODE : DIFFICILE" : "MODE : NORMAL";
+            btn.classList.toggle("hard", hard);
+        }
+
+        async function toggleMode() {
+            setGameMode(window.gameMode === "hard" ? "normal" : "hard");
+            updateModeButton();
+            // Le changement s'applique tout de suite : nouvelle manche dans le nouveau mode
+            if (window.gameActive) await newRound();
+        }
+
+        // game.js (defer) a déjà lu le mode sauvegardé quand DOMContentLoaded se déclenche
+        window.addEventListener("DOMContentLoaded", updateModeButton);
+
+        async function newRound() {
+            // Reset UI state for a fresh round
+            const img       = document.getElementById("challenge-image");
+            const validateBtn = document.getElementById("btn-validate");
+            const selName   = document.getElementById("selected-room-name");
+
+            img.classList.add("loading");
+            img.src = "";
+            validateBtn.disabled  = true;
+            validateBtn.textContent = "VALIDER";
+            validateBtn.style.borderColor = "";
+            validateBtn.style.color       = "";
+            selName.textContent = "—";
+
+            if (typeof clearSelection === "function") clearSelection();
+
+            try {
+                const { roomKey, imageDataUrl } = await startGame();
+                img.src = imageDataUrl;
+                img.classList.remove("loading");
+            } catch (e) {
+                console.error("Failed to start game:", e);
+            }
+        }
+
+        function onValidate() {
+            if (!window.selectedRoom || !window.gameActive) return;
+            const correct = checkAnswer(window.selectedRoom);
+            const btn = document.getElementById("btn-validate");
+
+            if (correct) {
+                btn.textContent = "✓ CORRECT !";
+                btn.style.borderColor = "#00ff00";
+                btn.style.color       = "#00ff00";
+            } else {
+                btn.textContent = "✗ INCORRECT";
+                btn.style.borderColor = "#ff4444";
+                btn.style.color       = "#ff4444";
+            }
+            btn.disabled = true;
+        }
+    </script>
 </body>
 </html>

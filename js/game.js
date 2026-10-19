@@ -9,7 +9,7 @@
 //   - Expose startGame() for use by the game UI
 //C:\Users\matis\Documents\GitHub\Rain-Guessr\generate_game_picture\Screens\screens.txt
 // Chemin résolu par rapport à CE fichier (js/game.js) et non par rapport à la page : les URL relatives d'une
-// page sont calculées depuis html/map-room.html, donc "../../" sortait du dépôt sur GitHub Pages
+// page sont calculées depuis html/map.html, donc "../../" sortait du dépôt sur GitHub Pages
 // (https://<user>.github.io/Rain-Guessr/html/… → https://<user>.github.io/generate_game_picture/… = 404).
 const SCREENS_PATH = (typeof document !== "undefined" && document.currentScript && document.currentScript.src)
     ? new URL("../generate_game_picture/Screens", document.currentScript.src).href

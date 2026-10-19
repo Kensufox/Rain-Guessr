@@ -123,7 +123,7 @@ async function loadMap() {
         if (typeof applyTransform === "function") applyTransform();
         else if (typeof redraw === "function") redraw();
 
-        // game.js / map-room.html écoutent cet évènement
+        // game.js / map.html écoutent cet évènement
         window.dispatchEvent(new Event("mapLoaded"));
 
     } catch (err) {
