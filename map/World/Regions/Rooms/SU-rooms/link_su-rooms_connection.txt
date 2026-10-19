@@ -49,6 +49,3 @@ su_c04|1|su_a41|23x151|E
 su_s01|1|su_a22|16x31|E
 su_s03|1|su_b01|17x18|W
 su_s04|1|su_a37|16x23|S
-gate_lf_su|1|su_a45|25x45|E
-gate_su_ds|1|su_b14|25x2|W
-gate_su_hi|1|su_b13|25x2|W

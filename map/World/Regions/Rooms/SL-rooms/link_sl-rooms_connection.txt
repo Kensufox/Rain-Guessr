@@ -20,13 +20,16 @@ sl_b04|2|sl_c03|58x33|S|sl_e01|22x23|S
 sl_c01|3|sl_a02|44x40|E|sl_a13|99x24|S|sl_b01|67x9|W
 sl_c02|4|sl_c10|28x66|W|sl_d06|19x102|S|sl_f01|25x14|S|sl_f02|27x164|S
 sl_c03|3|sl_a11|20x23|S|sl_b04|6x42|W|sl_e01|97x16|S
+sl_c04|2|sl_c05|93x5|W|sl_d01|8x27|N
 sl_c05|3|sl_c04|14x159|E|sl_c08|3x6|W|sl_s09|3x155|E
+sl_c06|3|sl_s04|5x93|E|sl_a03|8x142|E|sl_a06|20x2|W
 sl_c08|2|sl_c05|78x42|E|sl_f01|8x27|N
 sl_c09|2|sl_a16|2x151|N|sl_h03|17x4|W
 sl_c10|2|sl_a10|90x49|E|sl_c02|8x30|N
 sl_c11|2|gate_sh_sl|19x5|W|sl_b02|80x5|W
 sl_c12|2|sl_a08|17x2|W|sl_f01|17x143|E
 sl_d01|2|sl_c04|20x13|S|sl_d02|14x82|S
+sl_d02|3|sl_a10|91x5|W|sl_d01|8x23|N|sl_d03|91x50|E
 sl_d03|4|sl_a03|5x8|W|sl_a04|5x51|N|sl_a07|7x92|E|sl_d02|17x2|W
 sl_d04|3|sl_a12|14x34|S|sl_f02|15x24|S|sl_h02|16x70|S
 sl_d05|2|gate_sb_sl|3x5|W|sl_a06|18x201|E
@@ -49,6 +52,3 @@ sl_s08|1|sl_e02|24x35|S
 sl_s09|1|sl_c05|3x13|W
 sl_s10|1|sl_a16|8x30|E
 sl_s11|1|sl_e03|17x22|N
-gate_gw_sl|1|sl_a08|29x36|E
-gate_sb_sl|1|sl_d05|29x36|E
-gate_sh_sl|2|sl_c11|23x45|E|sl_s02|29x36|S

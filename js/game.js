@@ -24,7 +24,8 @@ window.campaign = "vanilla"
 window.guessTime = 30 //time in seconds
 const NAV_TYPES = ["flat", "layer"]
 window.navigationType = "flat"
-window.guess_amount = 1
+const MAX_GUESSES = 3
+window.guess_amount = MAX_GUESSES
 
 function loadSavedMode() {
     try {
