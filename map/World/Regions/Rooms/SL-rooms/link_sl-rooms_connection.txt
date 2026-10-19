@@ -48,3 +48,6 @@ sl_s08|1|sl_e02|24x35|S
 sl_s09|1|sl_c05|3x13|W
 sl_s10|1|sl_a16|8x30|E
 sl_s11|1|sl_e03|17x22|N
+gate_gw_sl|1|sl_a08|29x36|E
+gate_sb_sl|1|sl_d05|29x36|E
+gate_sh_sl|2|sl_c11|23x45|E|sl_s02|29x36|S

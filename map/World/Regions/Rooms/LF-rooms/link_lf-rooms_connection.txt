@@ -44,4 +44,6 @@ lf_s04|1|gate_lf_sb|14x15|W
 lf_s05|1|lf_a14|8x14|N
 lf_s06|1|lf_a15|11x7|N
 lf_s07|1|lf_b02|15x24|W
-
+gate_lf_sb|2|lf_c03|23x45|E|lf_s04|29x36|S
+gate_lf_su|1|lf_a14|25x2|W
+gate_si_lf|1|lf_c05|25x45|E

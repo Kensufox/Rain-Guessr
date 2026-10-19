@@ -44,3 +44,7 @@ hi_s03|1|hi_b04|11x16|W
 hi_s04|1|hi_a24|17x21|E
 hi_s05|1|hi_a10|24x18|S
 hi_s06|1|hi_c13|9x27|N
+gate_hi_cc|1|hi_c11|29x36|E
+gate_hi_gw|1|hi_a19|29x11|W
+gate_hi_sh|1|hi_c13|23x2|W
+gate_su_hi|1|hi_b04|25x45|E

@@ -54,3 +54,6 @@ sb_s04|1|sb_d04|21x11|W
 sb_s05|1|sb_g02|28x14|W
 sb_s06|1|sb_h03|31x35|E
 sb_s07|1|sb_b01|18x24|N
+gate_ds_sb|1|sb_d04|29x11|W
+gate_lf_sb|1|sb_f03|25x2|W
+gate_sb_sl|1|sb_g02|15x11|N

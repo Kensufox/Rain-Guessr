@@ -46,3 +46,6 @@ gw_s05|1|gate_ds_gw|13x16|W
 gw_s06|1|gw_a04|10x38|N
 gw_s07|1|gw_b05|29x36|E
 gw_s08|1|gw_a11|10x38|E
+gate_ds_gw|2|gw_b09|29x36|E|gw_s05|21x45|E
+gate_gw_sl|2|gw_b08|25x2|W|gw_s04|29x11|S
+gate_hi_gw|2|gw_b01|29x36|E|gw_s03|23x45|E

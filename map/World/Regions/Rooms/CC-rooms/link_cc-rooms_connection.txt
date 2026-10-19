@@ -33,3 +33,6 @@ cc_s03|1|cc_c03|25x20
 cc_s04|1|gate_si_cc|10x19
 cc_s05|1|cc_b04|9x23
 room|number_of_room_connections|connetion_to1|connection_pos1|...
+gate_cc_uw|1|cc_h01|25x2|W
+gate_hi_cc|1|cc_a16|15x11|N
+gate_si_cc|2|cc_c09|25x45|E|cc_s04|29x36|S

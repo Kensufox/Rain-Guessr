@@ -40,3 +40,6 @@ ds_s01r|1|ds_a20|16x29|E
 ds_s02l|1|ds_c01|16x18|W
 ds_s03|1|gate_ds_sb|16x19|W
 ds_s04|1|ds_a08|11x15|W
+gate_ds_gw|1|ds_b10|23x2|W
+gate_ds_sb|2|ds_d02|25x45|E|ds_s03|29x36|S
+gate_su_ds|1|ds_b02|29x36|S

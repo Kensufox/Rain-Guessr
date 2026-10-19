@@ -34,3 +34,5 @@ si_d07|2|si_b13|7x102|E|si_c09|6x9|W
 si_s03|1|gate_si_lf|11x32|E
 si_s04|1|si_a18|4x28|N
 si_s05|1|si_a27|25x31|E
+gate_si_cc|1|si_d03|25x2|W
+gate_si_lf|2|si_b13|15x11|N|si_s03|29x11|S
