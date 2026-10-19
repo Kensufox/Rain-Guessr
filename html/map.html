@@ -41,6 +41,7 @@
             <span id="selection-label">ROOM :</span>
             <span id="selected-room-name">—</span>
         </div>
+        <p id="timer">Time left: <span id="time-remaining">00:00</span></p>
         <!--<button id="btn-mode" onclick="toggleDifficulty()" title="Normal : extraits visibles. Difficile : extraits totalement aléatoires (peuvent être noirs)">MODE : NORMAL</button>
     --><button id="btn-validate" disabled onclick="onValidate()">VALIDER</button>
     </div>
@@ -57,6 +58,7 @@
     <script>
         window.gameActive = false;
         let mapReady = false;
+        let timerInterval;
 
         // Map signals it's done loading
         window.addEventListener("mapLoaded", () => {
@@ -67,6 +69,7 @@
         async function toggleGame() {
             const btn   = document.getElementById("btn-toggle-game");
             const panel = document.getElementById("game-panel");
+            clearLocate();
 
             if (window.gameActive) {
                 // Deactivate
@@ -90,6 +93,34 @@
             }
         }
 
+        function startTimer() {
+            let timeRemaining = 90; //seconds
+            updateTimerDisplay(timeRemaining);
+
+            clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+
+                updateTimerDisplay(timeRemaining);
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    onValidate(); // Auto-validate when time runs out
+                }
+
+            }, 1000);
+        }
+
+        function updateTimerDisplay(time) {
+            const minutes = Math.floor(time / 60);
+            const seconds = time % 60;
+
+            document.getElementById(
+                "time-remaining"
+            ).textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
         async function newRound() {
             // Reset UI state for a fresh round
             const img       = document.getElementById("challenge-image");
@@ -103,7 +134,7 @@
             validateBtn.style.borderColor = "";
             validateBtn.style.color       = "";
             selName.textContent = "—";
-
+            startTimer();
             if (typeof clearSelection === "function") clearSelection();
 
             try {
@@ -120,6 +151,13 @@
             window.guess_amount -= 1;
             //if (window.guess_amount <= 0) return; // No guesses left
             const correct = checkAnswer(window.selectedRoom);
+            const result = submitGuess(window.selectedRoom);
+            if (result) {
+                let totalScore = result.points;
+                console.log(`Points earned: ${totalScore}`);
+                locateRoom();
+                //showResult(result);
+            }
             const btn = document.getElementById("btn-validate");
             if (correct) {
                 btn.textContent = "✓ CORRECT !";
