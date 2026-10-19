@@ -48,8 +48,15 @@
             console.warn("Carte pas encore chargée : réessaie quand l'écran CHARGEMENT a disparu.");
             return null;
         }
+        let found;
+        // If query is provided, search for matching rooms; otherwise, use the current room
+        if (query) {
+            found = matchRooms(query);
+        }
+        else {
+            found = matchRooms((window.currentRoom || "").toLowerCase());
+        }
 
-        const found = matchRooms(query);
         if (!found.length) {
             console.warn(`Aucune room ne correspond à "${query}". Essaie listRooms("${String(query).slice(0, 3)}").`);
             return null;
