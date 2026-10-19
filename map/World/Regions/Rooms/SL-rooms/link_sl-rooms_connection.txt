@@ -26,6 +26,7 @@ sl_c09|2|sl_a16|2x151|N|sl_h03|17x4|W
 sl_c10|2|sl_a10|90x49|E|sl_c02|8x30|N
 sl_c11|2|gate_sh_sl|19x5|W|sl_b02|80x5|W
 sl_c12|2|sl_a08|17x2|W|sl_f01|17x143|E
+sl_d01|2|sl_c04|20x13|S|sl_d02|14x82|S
 sl_d03|4|sl_a03|5x8|W|sl_a04|5x51|N|sl_a07|7x92|E|sl_d02|17x2|W
 sl_d04|3|sl_a12|14x34|S|sl_f02|15x24|S|sl_h02|16x70|S
 sl_d05|2|gate_sb_sl|3x5|W|sl_a06|18x201|E

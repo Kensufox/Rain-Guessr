@@ -32,6 +32,7 @@ ss_d05|3|ss_a13|5x4|W|ss_b04|67x2|W|ss_e05|7x93|N
 ss_d06|2|ss_a18|3x97|N|ss_b05|4x6|W
 ss_d07|2|ss_ai|29x188|S|ss_e08|2x13|N
 ss_d08|3|gate_ss_uw|34x80|S|ss_e08|69x38|S|ss_s04|67x5|W
+ss_d08|3|ss_e08|34x80|S|ss_s04|69x38|S|gate_ss_uw|67x5|W
 ss_e01|4|ss_b03|2x126|N|ss_e04|18x251|E|ss_f02|18x5|W|ss_i02|30x126|S
 ss_e02|4|ss_a04|33x139|S|ss_a15|15x5|W|ss_b02|2x125|N|ss_d03|18x251|E
 ss_e03|2|ss_a17|3x44|N|ss_c04|185x25|S
