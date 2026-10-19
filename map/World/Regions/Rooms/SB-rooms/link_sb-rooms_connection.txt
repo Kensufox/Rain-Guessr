@@ -24,7 +24,7 @@ sb_c09|2|sb_e06|20x5|W|sb_l01|96x47|E
 sb_d01|2|sb_c08|66x95|E|sb_d07|12x2|W
 sb_d02|4|sb_a02|26x133|S|sb_a05|29x74|S|sb_a14|10x200|E|sb_e03|29x3|W
 sb_d03|2|sb_b03|12x195|E|sb_d07|31x14|S
-sb_d04|3|gate_ds_sb|7x42|N|sb_f02|139x3|W|sb_s04|3x2|N
+sb_d04|3|gate_ds_sb|7x42|E|sb_f02|139x3|W|sb_s04|3x2|N
 sb_d05|3|sb_a05|31x186|E|sb_a06|31x10|W|sb_e03|32x95|E
 sb_d06|2|sb_e05|138x26|S|sb_i01|9x23|S
 sb_d07|2|sb_d01|138x40|E|sb_d03|4x37|N
@@ -36,15 +36,15 @@ sb_e05|2|sb_a14|16x2|W|sb_d06|17x224|N
 sb_e06|2|sb_c09|17x263|E|sb_e01|27x5|W
 sb_f01|3|sb_g03|47x70|E|sb_i01|108x10|S|sb_j03|26x95|E
 sb_f02|3|sb_c06|4x21|N|sb_d04|23x98|E|sb_i01|108x10|S
-sb_f03|4|gate_lf_sb|92x47|S|sb_a09|175x13|W|sb_a10|22x50|E|sb_h03|215x41|E
+sb_f03|4|sb_a10|92x47|S|sb_a09|175x13|W|gate_lf_sb|22x50|E|sb_h03|215x41|E
 sb_g02|3|gate_sb_sl|27x354|E|sb_e02|9x3|W|sb_s05|33x322|S
 sb_g03|3|sb_e04|29x6|W|sb_f01|27x174|S|sb_j01|29x347|E
 sb_h02|4|sb_a03|56x199|E|sb_a04|57x11|W|sb_e04|30x199|E|sb_h03|30x6|W
 sb_h03|4|sb_a09|5x7|W|sb_f03|2x130|W|sb_h02|68x196|E|sb_s06|68x4|W
 sb_i01|5|sb_c05|4x16|N|sb_d06|103x13|S|sb_f01|4x146|N|sb_f02|2x84|N|sb_s01|2x68|N
-sb_j01|3|sb_c07|69x175|S|sb_e02|8x245|N|sb_g03|69x10|W
+sb_j01|3|sb_c07|69x175|S|sb_e02|8x245|E|sb_g03|69x10|W
 sb_j02|3|sb_c07|8x7|N|sb_e02|9x232|E|sb_j03|28x5|W
-sb_j03|3|sb_f01|17x4|W|sb_j02|26x423|S|sb_s02|2x378|N
+sb_j03|3|sb_f01|17x4|W|sb_j02|26x423|W|sb_s02|2x378|N
 sb_j04|4|sb_a02|22x252|E|sb_a06|67x165|S|sb_a08|23x3|W|sb_b03|69x8|W
 sb_l01|1|sb_c09|19x3|W
 sb_s01|1|sb_i01|9x32|S
