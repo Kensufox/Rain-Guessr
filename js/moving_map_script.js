@@ -86,10 +86,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
         let moved = true;
         switch (e.key) {
-            case 'ArrowLeft':  window.mapPanX -= keyPanStep; break;
-            case 'ArrowRight': window.mapPanX += keyPanStep; break;
-            case 'ArrowUp':    window.mapPanY += keyPanStep; break;
-            case 'ArrowDown':  window.mapPanY -= keyPanStep; break;
+            case 'ArrowLeft':  window.mapPanX += keyPanStep; break;
+            case 'ArrowRight': window.mapPanX -= keyPanStep; break;
+            case 'ArrowUp':    window.mapPanY -= keyPanStep; break;
+            case 'ArrowDown':  window.mapPanY += keyPanStep; break;
             default: moved = false;
         }
         if (moved) { e.preventDefault(); applyTransform(); }
