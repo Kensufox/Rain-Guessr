@@ -1,42 +1,45 @@
-// game.js — Rain Guessr game logic
-// Responsibilities:
-//   - Load the list of available screens from screens.txt
-//   - Pick a random room
-//   - Crop a square from that room's screenshot using Canvas API
-//       · mode "hard"   : completely random square (can be black / empty / out of the playable area)
-//       · mode "normal" : random square, but chosen among several candidates so that it shows
-//                         something (not black, not a flat colour)
-//   - Expose startGame() for use by the game UI
-//C:\Users\matis\Documents\GitHub\Rain-Guessr\generate_game_picture\Screens\screens.txt
-// Chemin résolu par rapport à CE fichier (js/game.js) et non par rapport à la page : les URL relatives d'une
-// page sont calculées depuis html/map.html, donc "../../" sortait du dépôt sur GitHub Pages
-// (https://<user>.github.io/Rain-Guessr/html/… → https://<user>.github.io/generate_game_picture/… = 404).
 const SCREENS_PATH = (typeof document !== "undefined" && document.currentScript && document.currentScript.src)
     ? new URL("../generate_game_picture/Screens", document.currentScript.src).href
     : "../generate_game_picture/Screens";
 const SCREENS_TXT  = `${SCREENS_PATH}/screens.txt`;
+
+// Game settings
 const CROP_SIZE    = 256; // side length of the challenge image in pixels
 
-// ── Game mode ─────────────────────────────────────────────────────────────────
-const GAME_MODES = ["normal", "hard"];
-const MODE_STORAGE_KEY = "rainGuessrMode";
+const GAME_DIFFICULTIES = ["normal", "hard"];
+const DIFFICULTY_STORAGE_KEY = "rainGuessrMode";
+// "normal" | "hard" — read by startGame()
+window.gameDifficulty = loadSavedMode();
+const CAMPAIGNS = [
+    "vanilla", 
+    "gourmand", 
+    "artificer", 
+    "rivulet",
+    "spearmaster",
+    "saint",
+    "watcher",
+    "inv" // do we keep that one ?
+]
+window.campaign = "vanilla"
+window.guessTime = 30 //time in seconds
+const NAV_TYPES = ["flat", "layer"]
+window.navigationType = "flat"
+window.guess_amount = 1
 
 function loadSavedMode() {
     try {
-        const m = localStorage.getItem(MODE_STORAGE_KEY);
-        if (GAME_MODES.includes(m)) return m;
-    } catch (e) { /* storage unavailable */ }
+        const m = localStorage.getItem(DIFFICULTY_STORAGE_KEY);
+        if (GAME_DIFFICULTIES.includes(m)) return m;
+    } catch (e) { console.log("localStorage unavailable, put default difficulty") /* storage unavailable */ }
     return "normal";
 }
 
-// "normal" | "hard" — read by startGame()
-window.gameMode = loadSavedMode();
+function toggleDifficulty() {
+    window.gameDifficulty = window.gameDifficulty === "hard" ? "normal" : "hard";
 
-function setGameMode(mode) {
-    if (!GAME_MODES.includes(mode)) return window.gameMode;
-    window.gameMode = mode;
-    try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch (e) { /* ignore */ }
-    return mode;
+    try { localStorage.setItem(DIFFICULTY_STORAGE_KEY, window.gameDifficulty); } catch (e) { /* ignore */ }
+
+    console.log(window.gameDifficulty);
 }
 
 // ── "Interesting crop" settings (normal mode) ────────────────────────────────
@@ -163,7 +166,7 @@ function chooseInterestingCrop(rgba, w, h, size, rng = Math.random) {
  *   mode "normal" : random position among candidates that actually show something
  * Returns a data URL (PNG) of the cropped square.
  */
-function cropRandomSquare(img, size = CROP_SIZE, mode = window.gameMode) {
+function cropRandomSquare(img, size = CROP_SIZE, mode = window.gameDifficulty) {
     const srcW = img.naturalWidth;
     const srcH = img.naturalHeight;
 
@@ -225,7 +228,7 @@ function cropRandomSquare(img, size = CROP_SIZE, mode = window.gameMode) {
  * roomKey format: "SU/SU_A01"
  * The correct answer is roomKey — do NOT expose this to the player directly.
  */
-async function startGame(cropSize = CROP_SIZE, mode = window.gameMode) {
+async function startGame(cropSize = CROP_SIZE, difficulty = window.gameDifficulty) {
     // 1. Load screen list
     const screenList = await loadScreenList();
     if (!screenList.length) throw new Error("screens.txt is empty.");
@@ -241,10 +244,10 @@ async function startGame(cropSize = CROP_SIZE, mode = window.gameMode) {
     const img    = await loadImage(imgUrl);
 
     // 4. Crop random square
-    const imageDataUrl = cropRandomSquare(img, cropSize, mode);
+    const imageDataUrl = cropRandomSquare(img, cropSize, difficulty);
 
-    console.log(`New game — room: ${roomEntry} (mode: ${mode})`);
-    return { roomKey: roomEntry, imageDataUrl, mode };
+    console.log(`New game — room: ${roomEntry} (difficulty: ${difficulty})`);
+    return { roomKey: roomEntry, imageDataUrl, difficulty };
 }
 
 // ── Answer checking ───────────────────────────────────────────────────────────
