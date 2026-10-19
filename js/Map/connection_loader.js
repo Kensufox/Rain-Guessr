@@ -1,5 +1,4 @@
-// connection_loader.js — loads and renders room connection curves
-// Depends on: roomBoundaries (map_loader.js), renderConnections() (render.js)
+const roomLinks = {};
 
 async function fetchConnectionText(folder) {
     const connPath = `${map_path}/${folder}/link_${folder.toLowerCase()}_connection.txt`;
@@ -16,7 +15,6 @@ async function fetchConnectionText(folder) {
     }
 }
 
-// Parse un fichier et alimente endpointsByPair (partagé entre TOUS les fichiers)
 function parseConnectionText(text, folder, endpointsByPair) {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
@@ -35,6 +33,8 @@ function parseConnectionText(text, folder, endpointsByPair) {
             const nextField = (parts[idx] || '').trim().toUpperCase();
             const dir = /^[NSEW]$/.test(nextField) ? (idx++, nextField) : '';
 
+            (roomLinks[roomA] ??= new Set()).add(roomB);
+            (roomLinks[roomB] ??= new Set()).add(roomA);
             if (!roomB || !posStr) continue;
 
             const [tileX, tileY] = posStr.toLowerCase().split('x').map(Number);

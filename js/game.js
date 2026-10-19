@@ -263,6 +263,33 @@ function checkAnswer(playerAnswer) {
     return (playerAnswer.toLowerCase().split("/"))[1] === window.currentRoom.toLowerCase();
 }
 
+/**
+ * À appeler quand le joueur valide sa réponse (clic sur "Valider", fin du timer...).
+ * playerAnswer : "SU/SU_A01", ou null/"" si le temps est écoulé.
+ * Retourne { correct, points, guessRoom, trueRoom, regionScore, roomScore, ... }
+ */
+function submitGuess(playerAnswer) {
+    const trueRoom = (window.currentRoom || "").toLowerCase();
+    if (!trueRoom) return null;
+
+    // Pas de réponse (timer écoulé) → 0 point
+    if (!playerAnswer) {
+        return { correct: false, points: 0, guessRoom: null, trueRoom };
+    }
+
+    const guessRoom = playerAnswer.split("/").pop().toLowerCase();
+    const correct   = guessRoom === trueRoom;
+
+    const result = computeScore(guessRoom, trueRoom);   // null si une room est inconnue du graphe
+    if (!result) {
+        console.warn(`Score impossible : room inconnue (${guessRoom} / ${trueRoom})`);
+        return { correct, points: correct ? SCORE.max : 0, guessRoom, trueRoom };
+    }
+
+    console.log(`Guess ${guessRoom} → vérité ${trueRoom} :`, result);
+    return { correct, guessRoom, trueRoom, ...result };
+}
+
 // Node (tests) — ignored by the browser
 if (typeof module !== "undefined" && module.exports) {
     module.exports = { buildCropScorer, chooseInterestingCrop };

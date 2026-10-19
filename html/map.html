@@ -19,6 +19,7 @@
     <script src="../js/moving_map_script.js"       defer></script>
     <script src="../js/Map/room_locate.js"         defer></script>
     <script src="../js/game.js"                    defer></script>
+    <script src="../js/score.js"                   defer></script>
 
     <link rel="icon" href="../pictures/ico/survivor_head1.ico">
 </head>
@@ -117,6 +118,12 @@
         function onValidate() {
             if (!window.selectedRoom || !window.gameActive) return;
             const correct = checkAnswer(window.selectedRoom);
+            const result = submitGuess(window.selectedRoom);
+            if (result) {
+                let totalScore = result.points;
+                console.log(`Points earned: ${totalScore}`);
+                //showResult(result);
+            }
             const btn = document.getElementById("btn-validate");
 
             if (correct) {
