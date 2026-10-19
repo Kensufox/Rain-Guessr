@@ -117,25 +117,36 @@
 
         function onValidate() {
             if (!window.selectedRoom || !window.gameActive) return;
+            window.guess_amount -= 1;
+            //if (window.guess_amount <= 0) return; // No guesses left
             const correct = checkAnswer(window.selectedRoom);
-            const result = submitGuess(window.selectedRoom);
-            if (result) {
-                let totalScore = result.points;
-                console.log(`Points earned: ${totalScore}`);
-                //showResult(result);
-            }
             const btn = document.getElementById("btn-validate");
-
             if (correct) {
                 btn.textContent = "✓ CORRECT !";
                 btn.style.borderColor = "#00ff00";
                 btn.style.color       = "#00ff00";
+                const result  = submitGuess(window.selectedRoom);
+                if (result) {
+                    let totalScore = result.points;
+                    console.log(`Points earned: ${totalScore}`);
+                    //showResult(result);
+                }
             } else {
                 btn.textContent = "✗ INCORRECT";
                 btn.style.borderColor = "#ff4444";
                 btn.style.color       = "#ff4444";
+                if (window.guess_amount <= 0) {
+                    const result  = submitGuess(window.selectedRoom);    
+                    if (result) {
+                        let totalScore = result.points;
+                        console.log(`Points earned: ${totalScore}`);
+                        //showResult(result);
+                    }
+                    btn.disabled = true;
+                    window.gameActive = false;
+                    window.guess_amount = MAX_GUESSES; // Reset for next round
+                }
             }
-            btn.disabled = true;
         }
     </script>
 </body>
