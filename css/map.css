@@ -213,3 +213,15 @@ a {
   text-decoration: none;
   font-family: rain_world_menu_font_Webfont;
 }
+
+/* Le navigateur ne doit pas scroller ni zoomer la page quand on touche la carte */
+#canvas-wrapper, #canvas-wrapper canvas { touch-action: none; }
+body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+/* Boutons assez grands pour un doigt */
+button { min-height: 44px; min-width: 44px; }
+
+@media (max-width: 700px) {
+    #game-panel { max-width: 100vw; }
+    #challenge-image { max-width: 100%; height: auto; }
+}
