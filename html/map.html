@@ -138,6 +138,7 @@
             validateBtn.style.borderColor = "";
             validateBtn.style.color       = "";
             selName.textContent = "—";
+            window.guess_amount = MAX_GUESSES; // Reset for next round
             startTimer();
             if (typeof clearSelection === "function") clearSelection();
 
@@ -153,51 +154,20 @@
         function onValidate() {
             if (!window.selectedRoom || !window.gameActive) return;
             window.guess_amount -= 1;
-            //if (window.guess_amount <= 0) return; // No guesses left
             const correct = checkAnswer(window.selectedRoom);
             let result = null;
-            //const result = submitGuess(window.selectedRoom);
-            //if (result) {
-            //    let totalScore = result.points;
-            //    console.log(`Points earned: ${totalScore}`);
-            //    locateRoom();
-            //    clearInterval(timerInterval);
-            //    document.getElementById("time-remaining").textContent = '00:00';
-            //    //showResult(result);
-            //}
             const btn = document.getElementById("btn-validate");
             if (correct) {
                 btn.textContent = "✓ CORRECT !";
                 btn.style.borderColor = "#00ff00";
                 btn.style.color       = "#00ff00";
                 result = checkResult();
-                //const result  = submitGuess(window.selectedRoom);
-                //if (result) {
-                //    let totalScore = result.points;
-                //    console.log(`Points earned: ${totalScore}`);
-                //    locateRoom();
-                //    clearInterval(timerInterval);
-                //    document.getElementById("time-remaining").textContent = '00:00';
-                //    //showResult(result);
-                //}
             } else {
                 btn.textContent = "✗ INCORRECT";
                 btn.style.borderColor = "#ff4444";
                 btn.style.color       = "#ff4444";
                 if (window.guess_amount <= 0) {
                     result = checkResult();
-                    //const result  = submitGuess(window.selectedRoom);    
-                    //if (result) {
-                    //    let totalScore = result.points;
-                    //    console.log(`Points earned: ${totalScore}`);
-                    //    locateRoom();
-                    //    clearInterval(timerInterval);
-                    //    document.getElementById("time-remaining").textContent = '00:00';
-                    //    //showResult(result);
-                    //}
-                    btn.disabled = true;
-                    window.gameActive = false;
-                    window.guess_amount = MAX_GUESSES; // Reset for next round
                 }
             }
         }
@@ -208,10 +178,12 @@
                 let totalScore = result.points;
                 console.log(`Points earned: ${totalScore}`);
                 locateRoom();
-                document.getElementById("answer-room-name").textContent = window.locatedRoom;
+                document.getElementById("answer-room-name").textContent = shortName(window.locatedRoom);
                 clearInterval(timerInterval);
                 document.getElementById("time-remaining").textContent = '00:00';
-                //showResult(result);
+                document.getElementById("btn-validate").disabled = true;
+                btn.disabled = true;
+                window.gameActive = false;
                 return result;
             }
             return null;

@@ -230,6 +230,7 @@ function cropRandomSquare(img, size = CROP_SIZE, mode = window.gameDifficulty) {
  * The correct answer is roomKey — do NOT expose this to the player directly.
  */
 async function startGame(cropSize = CROP_SIZE, difficulty = window.gameDifficulty) {
+      
     // 1. Load screen list
     const screenList = await loadScreenList();
     if (!screenList.length) throw new Error("screens.txt is empty.");
