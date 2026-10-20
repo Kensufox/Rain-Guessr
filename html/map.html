@@ -38,8 +38,12 @@
     <div id="game-panel">
         <img id="challenge-image" class="loading" alt="Challenge" src="">
         <div id="selection-row">
-            <span id="selection-label">ROOM :</span>
+            <span id="selection-label">SELECTED ROOM :</span>
             <span id="selected-room-name">—</span>
+        </div>
+        <div id="selection-row">
+            <span id="answer-label">CORRECT ROOM :</span>
+            <span id="answer-room-name">—</span>
         </div>
         <p id="timer">Time left: <span id="time-remaining">00:00</span></p>
         <!--<button id="btn-mode" onclick="toggleDifficulty()" title="Normal : extraits visibles. Difficile : extraits totalement aléatoires (peuvent être noirs)">MODE : NORMAL</button>
@@ -151,42 +155,66 @@
             window.guess_amount -= 1;
             //if (window.guess_amount <= 0) return; // No guesses left
             const correct = checkAnswer(window.selectedRoom);
-            const result = submitGuess(window.selectedRoom);
-            if (result) {
-                let totalScore = result.points;
-                console.log(`Points earned: ${totalScore}`);
-                locateRoom();
-                clearInterval(timerInterval);
-                document.getElementById("time-remaining").textContent = '00:00';
-                //showResult(result);
-            }
+            let result = null;
+            //const result = submitGuess(window.selectedRoom);
+            //if (result) {
+            //    let totalScore = result.points;
+            //    console.log(`Points earned: ${totalScore}`);
+            //    locateRoom();
+            //    clearInterval(timerInterval);
+            //    document.getElementById("time-remaining").textContent = '00:00';
+            //    //showResult(result);
+            //}
             const btn = document.getElementById("btn-validate");
             if (correct) {
                 btn.textContent = "✓ CORRECT !";
                 btn.style.borderColor = "#00ff00";
                 btn.style.color       = "#00ff00";
-                const result  = submitGuess(window.selectedRoom);
-                if (result) {
-                    let totalScore = result.points;
-                    console.log(`Points earned: ${totalScore}`);
-                    //showResult(result);
-                }
+                result = checkResult();
+                //const result  = submitGuess(window.selectedRoom);
+                //if (result) {
+                //    let totalScore = result.points;
+                //    console.log(`Points earned: ${totalScore}`);
+                //    locateRoom();
+                //    clearInterval(timerInterval);
+                //    document.getElementById("time-remaining").textContent = '00:00';
+                //    //showResult(result);
+                //}
             } else {
                 btn.textContent = "✗ INCORRECT";
                 btn.style.borderColor = "#ff4444";
                 btn.style.color       = "#ff4444";
                 if (window.guess_amount <= 0) {
-                    const result  = submitGuess(window.selectedRoom);    
-                    if (result) {
-                        let totalScore = result.points;
-                        console.log(`Points earned: ${totalScore}`);
-                        //showResult(result);
-                    }
+                    result = checkResult();
+                    //const result  = submitGuess(window.selectedRoom);    
+                    //if (result) {
+                    //    let totalScore = result.points;
+                    //    console.log(`Points earned: ${totalScore}`);
+                    //    locateRoom();
+                    //    clearInterval(timerInterval);
+                    //    document.getElementById("time-remaining").textContent = '00:00';
+                    //    //showResult(result);
+                    //}
                     btn.disabled = true;
                     window.gameActive = false;
                     window.guess_amount = MAX_GUESSES; // Reset for next round
                 }
             }
+        }
+
+        function checkResult() {
+            const result  = submitGuess(window.selectedRoom);
+            if (result) {
+                let totalScore = result.points;
+                console.log(`Points earned: ${totalScore}`);
+                locateRoom();
+                document.getElementById("answer-room-name").textContent = window.locatedRoom;
+                clearInterval(timerInterval);
+                document.getElementById("time-remaining").textContent = '00:00';
+                //showResult(result);
+                return result;
+            }
+            return null;
         }
     </script>
 </body>
