@@ -20,6 +20,7 @@ sh_a24|3|sh_b11|14x6|S|sh_c08|14x43|N|sh_s06|30x43|S
 sh_a25|2|sh_a11|20x46|E|sh_d01|2x5|N
 sh_a26|2|sh_a04|24x4|W|sh_e05|12x9|N
 sh_b01|3|sh_a05|30x14|S|sh_b08|15x48|S|sh_c10|8x102|E
+sh_b02|2|sh_a06|28x4|W|sh_b03|3x100|N|
 sh_b03|2|sh_b02|65x4|S|sh_c04|2x45|E
 sh_b04|3|sh_a04|3x101|E|sh_a07|32x16|W|sh_a23|32x64|S
 sh_b05|3|sh_a07|13x100|E|sh_a22|31x45|S|sh_c08|31x9|S

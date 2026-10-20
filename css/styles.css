@@ -68,8 +68,7 @@ a {
   color: #fff;;
   font-size: 30px;
   font-weight: bold;
-  margin: 0px;
-  margin-top: 3%;
+  padding-top: 3%;
   vertical-align: top;
   text-decoration: none;
   font-family: rain_world_menu_font_Webfont;
@@ -152,7 +151,24 @@ img{
   background-color: rgba(0, 0, 0, 0.4);
 }
 
+.disable {
+  border-color: #636060 !important;
+  color: #636060 !important;
+}
 
+#text-button.refused {
+  border-color: #ff4e4e !important;
+  background-color: rgba(255, 49, 49, 0.45) !important;
+  color: #ffabab !important;
+  transition: background-color 0.1s, border-color 0.1s;
+}
+
+button.refused {
+  border-color: #ff4e4e !important;
+  background-color: rgba(255, 52, 52, 0.45) !important;
+  color: #ffabab !important;
+  transition: background-color 0.1s, border-color 0.1s;
+}
 
 @media screen and (orientation: portrait) {
   .title {

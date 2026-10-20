@@ -71,7 +71,10 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function detectRoomCollision(mapX, mapY) {
-    for (const [roomKey, { x1, y1, x2, y2 }] of Object.entries(roomBoundaries)) {
+    for (const [roomKey, b] of Object.entries(roomBoundaries)) {
+        // Mode couches : on ne sélectionne que les rooms de la couche affichée (map_loader.js)
+        if (typeof isRoomPickable === "function" && !isRoomPickable(b)) continue;
+        const { x1, y1, x2, y2 } = b;
         if (mapX >= Math.min(x1, x2) && mapX <= Math.max(x1, x2) &&
             mapY >= Math.min(y1, y2) && mapY <= Math.max(y1, y2)) {
             return roomKey;

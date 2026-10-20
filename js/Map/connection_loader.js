@@ -1,67 +1,50 @@
-// connection_loader.js — loads and renders room connection curves
-// Depends on: roomBoundaries (map_loader.js), renderConnections() (render.js)
-// Load order: render.js → map_loader.js → room_detection.js → connection_loader.js
+const roomLinks = {};
 
-// Called by map_loader.js once all rooms are loaded and rendered
-async function loadConnections(region, regionPosCache) {
-    const connPath = `${map_path}/${region}/link_${region.toLowerCase()}_connection.txt`;
-
-    let text;
+async function fetchConnectionText(folder) {
+    const connPath = `${map_path}/${folder}/link_${folder.toLowerCase()}_connection.txt`;
     try {
         const response = await fetch(connPath);
         if (!response.ok) {
-            console.warn(`No connection file for region ${region}: ${connPath}`);
-            return;
+            console.warn(`No connection file for ${folder}: ${connPath}`);
+            return null;
         }
-        text = await response.text();
+        return await response.text();
     } catch (err) {
-        console.warn(`Could not load connections for ${region}:`, err);
-        return;
+        console.warn(`Could not load connections for ${folder}:`, err);
+        return null;
     }
+}
 
-    const regionKey = region.split('-')[0];
-    const region_pos = regionPosCache[regionKey];
-    if (!region_pos) {
-        console.warn(`Region position not found for ${regionKey}`);
-        return;
-    }
-
-    // Each connection: { x1, y1, dir1, x2, y2, dir2 }
-    // dir1 = exit direction from roomA, dir2 = exit direction from roomB (looked up from roomB's line)
-    // We store all parsed endpoints first, then match pairs to get both directions.
-    const endpointsByPair = {}; // pairKey → { ax, ay, dirA, bx, by, dirB, filled sides }
-
+// Parse un fichier et alimente endpointsByPair (partagé entre TOUS les fichiers)
+function parseConnectionText(text, folder, endpointsByPair) {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
     for (const line of lines) {
         if (line.startsWith('room|')) continue;
 
         const parts = line.split('|');
-        // Format: roomA | count | roomB | posXxposY | dir | roomC | posXxposY | dir | ...
         const roomA = parts[0].trim().toLowerCase();
         const count = parseInt(parts[1]);
 
-        let idx = 2; // current parse position in parts[]
+        let idx = 2;
         for (let i = 0; i < count; i++) {
             const roomB  = (parts[idx++] || '').trim().toLowerCase();
             const posStr = (parts[idx++] || '').trim();
 
-            // Direction field is optional — detect it by checking if the next
-            // field is a single cardinal letter rather than a room name or position
             const nextField = (parts[idx] || '').trim().toUpperCase();
             const dir = /^[NSEW]$/.test(nextField) ? (idx++, nextField) : '';
 
+            (roomLinks[roomA] ??= new Set()).add(roomB);
+            (roomLinks[roomB] ??= new Set()).add(roomA);
             if (!roomB || !posStr) continue;
 
-            if (roomB.startsWith('gate_')) continue;
-
-            const [tileX, tileY] = posStr.toLowerCase().split('x').map(Number); // accepte aussi "22X197"
+            const [tileX, tileY] = posStr.toLowerCase().split('x').map(Number);
 
             // Swap X/Y: coordinate system is rotated 90°CW + vflip vs map space
             const mapTileX = tileY;
             const mapTileY = tileX;
 
-            const boundaryA = getRoomBoundary(roomA, region);
+            const boundaryA = getRoomBoundary(roomA, folder, roomB);
             if (!boundaryA) {
                 console.warn(`Missing boundary for ${roomA}`);
                 continue;
@@ -70,52 +53,74 @@ async function loadConnections(region, regionPosCache) {
             const mapX = boundaryA.x1 + mapTileX;
             const mapY = boundaryA.y1 - mapTileY;
 
-            // pairKey is sorted so A↔B and B↔A resolve to the same entry
-            const pairKey = [roomA, roomB].sort().join('↔');
-            if (!endpointsByPair[pairKey]) endpointsByPair[pairKey] = {};
+            const [first, second] = [roomA, roomB].sort();
+            const pairKey = `${first}↔${second}`;
+            const entry = (endpointsByPair[pairKey] ??= { first, second });
 
-            const entry = endpointsByPair[pairKey];
-            // Tag which side of the pair this endpoint belongs to
-            if (roomA <= roomB) {
+            if (roomA === first) {
                 entry.ax = mapX; entry.ay = mapY; entry.dirA = dir;
             } else {
                 entry.bx = mapX; entry.by = mapY; entry.dirB = dir;
             }
-            // Also store room names so we can fall back to boundary center
-            entry.roomA = entry.roomA || roomA;
-            entry.roomB = entry.roomB || roomB;
-            entry.region = region;
+            entry.folder = entry.folder || folder;
         }
     }
+}
 
-    // Build final connection list, filling in missing endpoints with boundary centers
+// Called by map_loader.js once all rooms are loaded and rendered
+async function loadConnections(folders) {
+    const texts = await Promise.all(folders.map(async f => [f, await fetchConnectionText(f)]));
+
+    const endpointsByPair = {};
+    for (const [folder, text] of texts) {
+        if (text) parseConnectionText(text, folder, endpointsByPair);
+    }
+
+    const center = b => b ? [(b.x1 + b.x2) / 2, (b.y1 + b.y2) / 2] : [null, null];
+
     const connections = [];
-    for (const [pairKey, e] of Object.entries(endpointsByPair)) {
-        const boundaryB = getRoomBoundary(e.roomB, e.region);
+    for (const e of Object.values(endpointsByPair)) {
+        const bFirst  = getRoomBoundary(e.first,  e.folder, e.second);
+        const bSecond = getRoomBoundary(e.second, e.folder, e.first);
+        const [cax, cay] = center(bFirst);
+        const [cbx, cby] = center(bSecond);
 
-        const x1   = e.ax  ?? (boundaryB ? (boundaryB.x1 + boundaryB.x2) / 2 : null);
-        const y1   = e.ay  ?? (boundaryB ? (boundaryB.y1 + boundaryB.y2) / 2 : null);
-        const dir1 = e.dirA ?? '';
-        const x2   = e.bx  ?? (boundaryB ? (boundaryB.x1 + boundaryB.x2) / 2 : null);
-        const y2   = e.by  ?? (boundaryB ? (boundaryB.y1 + boundaryB.y2) / 2 : null);
-        const dir2 = e.dirB ?? '';
+        const x1 = e.ax ?? cax, y1 = e.ay ?? cay, dir1 = e.dirA ?? '';
+        const x2 = e.bx ?? cbx, y2 = e.by ?? cby, dir2 = e.dirB ?? '';
 
         if (x1 == null || x2 == null) continue;
-        connections.push({ x1, y1, dir1, x2, y2, dir2 });
+        // tagA/tagB : couche de chaque bout (undefined en mode 2D → toujours visible)
+        connections.push({
+            x1, y1, dir1, x2, y2, dir2,
+            tagA: bFirst?.layer  !== undefined ? { layer: bFirst.layer }  : null,
+            tagB: bSecond?.layer !== undefined ? { layer: bSecond.layer } : null
+        });
     }
 
     if (connections.length > 0) {
         renderConnections(connections);
-        console.log(`Drew ${connections.length} connections for region ${region}`);
+        console.log(`Drew ${connections.length} connections`);
     }
 }
 
-// Find the roomBoundaries entry for a room name
-function getRoomBoundary(roomName, region) {
+// Find the roomBoundaries entry for a room name.
+// hintRoom (optionnel) : en mode couches, une gate existe en deux copies (une dans chaque région).
+// On prend alors celle qui est dans la même région que hintRoom (la room à l'autre bout du lien).
+function getRoomBoundary(roomName, region, hintRoom) {
     const key = `${region}/${roomName}`;
     if (roomBoundaries[key]) return roomBoundaries[key];
+
+    const matches = [];
     for (const [k, v] of Object.entries(roomBoundaries)) {
-        if (k.toLowerCase().endsWith('/' + roomName)) return v;
+        if (k.toLowerCase().endsWith('/' + roomName)) matches.push([k, v]);
     }
-    return null;
+    if (matches.length > 1 && hintRoom) {
+        const hintKey = Object.keys(roomBoundaries).find(k => k.toLowerCase().endsWith('/' + hintRoom));
+        if (hintKey) {
+            const hintRegion = hintKey.split('/')[0];
+            const same = matches.find(([k]) => k.split('/')[0] === hintRegion);
+            if (same) return same[1];
+        }
+    }
+    return matches.length ? matches[0][1] : null;
 }

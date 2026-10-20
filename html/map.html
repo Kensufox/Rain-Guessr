@@ -1,53 +1,227 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Let's play Rain Guessr.">
-    <title>Rain Guessr - Map</title>
-    <link id="stylesheet" rel="stylesheet" href='../css/style-map.css'>
-<!--
-<body>
-    <div id="ui-container">
-        <button id="return-btn"><a href="../index.html">RETURN</a></button>
-        <div id="room-info" class="hidden">
-            <span id="room-name">Room Name</span>
-        </div>
-        <div id="score-info">
-            <p>Click a room to select it</p>
-        </div>
-    -->
-    <script src="../js/style.js" defer></script>
-    <link rel="icon" href="../pictures/ico/survivor_head1.ico"> 
+    <meta name="description" content="Rain Guessr">
+    <title>Rain Guessr</title>
+    <link id="stylesheet" rel="stylesheet" href='../css/map.css'>
+
+    <!-- Load order matters: render first basic, 
+         then (defines gl, canvas, renderRoom),
+         then map_loader (fetches data, calls renderRoom),
+         then room_detection (reads canvas + roomBoundaries) -->
+    <script src="../js/style.js"                   defer></script>
+    <script src="../js/Map/render.js"              defer></script>
+    <script src="../js/Map/map_loader.js"          defer></script>
+    <script src="../js/Map/room_detection.js"      defer></script>
+    <script src="../js/Map/connection_loader.js"   defer></script>
+    <script src="../js/moving_map_script.js"       defer></script>
+    <script src="../js/Map/room_locate.js"         defer></script>
+    <script src="../js/game.js"                    defer></script>
+    <script src="../js/score.js"                   defer></script>
+
+    <link rel="icon" href="../pictures/ico/survivor_head1.ico">
 </head>
 <body>
-    <button><a href="../index.html" id="text-button">RETURN</a></button>
-    <div id="map-container">
-        <div id="map"></div>
-    </div>
-    
-    <div id="map-container">
-        <svg id="map-svg" width="20000" height="20000">
-            <!-- Background grid -->
-            <defs>
-                <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
-                    <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>
-                </pattern>
-            </defs>
-            <rect width="20000" height="20000" fill="#0a0a0a"/>
-            <rect width="20000" height="20000" fill="url(#grid)"/>
+
+    <!-- Map canvases -->
+    <button type="button"><a href="../index.html" id="text-button">BACK</a> </button>
             
-            <!-- Rooms will be rendered here -->
-            <g id="rooms-group"></g>
-            
-            <!-- Selected point will be drawn here -->
-            <g id="selection-group"></g>
-        </svg>
+    <div id="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+        <canvas id="canvas-connections"></canvas>
+        <canvas id="canvas-overlay"></canvas>
     </div>
 
-    <script src="../js/room-renderer.js" defer></script>
-    <script src="../js/map-init.js" defer></script>
-    <script src="../js/moving_map_script.js" defer></script>
+    <!-- Game UI -->
+    <div id="game-panel">
+        <img id="challenge-image" class="loading" alt="Challenge" src="">
+        <div id="selection-row">
+            <span id="selection-label">SELECTED ROOM :</span>
+            <span id="selected-room-name">—</span>
+        </div>
+        <div id="selection-row">
+            <span id="answer-label">CORRECT ROOM :</span>
+            <span id="answer-room-name">—</span>
+        </div>
+        <p id="timer">Time left: <span id="time-remaining">00:00</span></p>
+        <!--<button id="btn-mode" onclick="toggleDifficulty()" title="Normal : extraits visibles. Difficile : extraits totalement aléatoires (peuvent être noirs)">MODE : NORMAL</button>
+    --><button id="btn-validate" disabled onclick="onValidate()">GUESS</button>
+    </div>
+
+    <!-- Toggle button — always visible -->
+    <button id="btn-toggle-game" onclick="toggleGame()">▶ JOUER</button>
+
+    <!-- Hover tooltip -->
+    <div id="room-tooltip"></div>
+
+    <!-- Loading overlay (map load only, not game) -->
+    <div id="loading-overlay">CHARGEMENT...</div>
+
+    <div id="layer-buttons" style="position:fixed; top:8px; right:8px; z-index:20; display:none; gap:4px;">
+        <button type="button" data-layer="0">C0</button>
+        <button type="button" data-layer="1">C1</button>
+        <button type="button" data-layer="2">C2</button>
+        <button type="button" data-layer="all">TOUT</button>
+    </div>
+
+    <script>
+        function updateNavUI() {
+            if (typeof getNavigationState !== "function") return;
+            const { type, layer } = getNavigationState();
+            const box = document.getElementById("layer-buttons");
+            box.style.display = type === "layer" ? "flex" : "none";
+            box.querySelectorAll("button").forEach(b =>
+                b.style.outline = String(layer) === b.dataset.layer ? "2px solid #ff8800" : "");
+        }
+        window.addEventListener("mapLoaded", updateNavUI);
+        window.addEventListener("navigationChanged", updateNavUI);
+
+        window.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll("#layer-buttons button").forEach(b => {
+                b.onclick = () => setActiveLayer(b.dataset.layer === "all" ? "all" : +b.dataset.layer);
+            });
+        });
+
+        // Raccourcis : 1 / 2 / 3 = couche 0 / 1 / 2, 4 = toutes
+        window.addEventListener("keydown", e => {
+            if (typeof getNavigationState !== "function" || getNavigationState().type !== "layer") return;
+            if (e.target.matches && e.target.matches("input, textarea")) return;
+            const map = { "1": 0, "2": 1, "3": 2, "4": "all" };
+            if (e.key in map) setActiveLayer(map[e.key]);
+        });
+        
+        window.gameActive = false;
+        let mapReady = false;
+        let timerInterval;
+
+        // Map signals it's done loading
+        window.addEventListener("mapLoaded", () => {
+            mapReady = true;
+            document.getElementById("loading-overlay").classList.add("hidden");
+        });
+
+        async function toggleGame() {
+            const btn   = document.getElementById("btn-toggle-game");
+            const panel = document.getElementById("game-panel");
+            clearLocate();
+
+            if (window.gameActive) {
+                // Deactivate
+                window.gameActive = false;
+                panel.classList.remove("visible");
+                btn.classList.remove("active");
+                btn.textContent = "▶ JOUER";
+
+                // Clear any selection left on the map
+                if (typeof clearSelection === "function") clearSelection();
+                document.getElementById("selected-room-name").textContent = "—";
+            } else {
+                // Activate — start a new round
+                if (!mapReady) return; // map not loaded yet, ignore
+                window.gameActive = true;
+                panel.classList.add("visible");
+                btn.classList.add("active");
+                btn.textContent = "■ STOP";
+
+                await newRound();
+            }
+        }
+
+        function startTimer() {
+            let timeRemaining = 90; //seconds
+            updateTimerDisplay(timeRemaining);
+
+            clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+
+                updateTimerDisplay(timeRemaining);
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    onValidate(); // Auto-validate when time runs out
+                }
+
+            }, 1000);
+        }
+
+        function updateTimerDisplay(time) {
+            const minutes = Math.floor(time / 60);
+            const seconds = time % 60;
+
+            document.getElementById(
+                "time-remaining"
+            ).textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        async function newRound() {
+            // Reset UI state for a fresh round
+            const img       = document.getElementById("challenge-image");
+            const validateBtn = document.getElementById("btn-validate");
+            const selName   = document.getElementById("selected-room-name");
+
+            img.classList.add("loading");
+            img.src = "";
+            validateBtn.disabled  = true;
+            validateBtn.textContent = "GUESS";
+            validateBtn.style.borderColor = "";
+            validateBtn.style.color       = "";
+            selName.textContent = "—";
+            window.guess_amount = MAX_GUESSES; // Reset for next round
+            startTimer();
+            if (typeof clearSelection === "function") clearSelection();
+
+            try {
+                const { roomKey, imageDataUrl } = await startGame();
+                img.src = imageDataUrl;
+                img.classList.remove("loading");
+            } catch (e) {
+                console.error("Failed to start game:", e);
+            }
+        }
+
+        function onValidate() {
+            if (!window.selectedRoom || !window.gameActive) return;
+            window.guess_amount -= 1;
+            const correct = checkAnswer(window.selectedRoom);
+            let result = null;
+            const btn = document.getElementById("btn-validate");
+            if (correct) {
+                btn.textContent = "✓ CORRECT !";
+                btn.style.borderColor = "#00ff00";
+                btn.style.color       = "#00ff00";
+                result = checkResult();
+            } else {
+                btn.textContent = "✗ INCORRECT";
+                btn.style.borderColor = "#ff4444";
+                btn.style.color       = "#ff4444";
+                if (window.guess_amount <= 0) {
+                    result = checkResult();
+                }
+            }
+        }
+
+        function checkResult() {
+            const result = submitGuess(window.selectedRoom);
+            if (!result) return null;
+
+            // 1) D'abord l'état de fin de manche, pour qu'une erreur plus bas ne laisse pas le jeu ouvert
+            window.gameActive = false;
+            document.getElementById("btn-validate").disabled = true;
+            clearInterval(timerInterval);
+            document.getElementById("time-remaining").textContent = '00:00';
+
+            // 2) Ensuite l'affichage
+            console.log(`Points earned: ${result.points}`);
+            locateRoom();
+            const answer = window.locatedRoom ? window.locatedRoom.split("/")[1] : window.currentRoom;
+            document.getElementById("answer-room-name").textContent = answer;
+
+            return result;
+        }
+    </script>
 </body>
 </html>
