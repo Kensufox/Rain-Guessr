@@ -1,10 +1,3 @@
-// render.js — WebGL initialisation and drawing
-// Exposes: initRender(), renderRoom(segments), renderBoundaryHighlight(roomKey),
-//          renderSelectionHighlight(roomKey), clearHighlight(), clearSelection(),
-//          renderConnections(connections)
-// Depends on: roomBoundaries (map_loader.js)
-// Load order: render.js → map_loader.js → room_detection.js → moving_map_script.js
-
 let gl;
 let canvas;
 let shaderProgram;
@@ -13,6 +6,12 @@ let uTranslate, uScale, uViewport, uColor;
 
 const allSegments      = []; // all WebGL geometry buffers
 const storedConnections = []; // all connection data for redraw
+
+window.renderFilter = null;
+function tagAlpha(tag) {
+    if (!tag || !window.renderFilter) return 1;
+    return window.renderFilter(tag);
+}
 
 window.addEventListener("DOMContentLoaded", () => {
     console.log("Initialising WebGL...");
@@ -121,7 +120,8 @@ function setRenderTransform(mapOffsetX, mapOffsetY, scale) {
 
 // segments : [{x1,y1,x2,y2}] en coordonnées carte (tuiles, y vers le haut)
 // color    : [r,g,b,a] (0..1) — rouge par défaut comme avant
-function renderRoom(segments, color = [1, 0, 0, 1]) {
+// tag      : null ou { layer } — sert uniquement au filtre de visibilité (navigation par couches)
+function renderRoom(segments, color = [1, 0, 0, 1], tag = null) {
     if (!shaderProgram) { console.error("renderRoom called before initRender"); return; }
 
     const flatVertices = new Float32Array(segments.length * 4);
@@ -136,20 +136,32 @@ function renderRoom(segments, color = [1, 0, 0, 1]) {
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, flatVertices, gl.STATIC_DRAW);
-    allSegments.push({ buf, count: flatVertices.length / 2, color });
+    allSegments.push({ buf, count: flatVertices.length / 2, color, tag });
+    // Pas de dessin immédiat : l'appelant fait redraw() une fois tout ajouté
+    // (le dessin direct ignorait le filtre de couches et ne servait qu'au premier affichage).
+}
 
-    gl.useProgram(shaderProgram);
-    gl.uniform4fv(uColor, color);
-    gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 0, 0);
-    gl.drawArrays(gl.LINES, 0, flatVertices.length / 2);
+// Vide la géométrie et les connexions (changement de mode de navigation)
+function clearRenderData() {
+    if (gl) for (const { buf } of allSegments) gl.deleteBuffer(buf);
+    allSegments.length = 0;
+    storedConnections.length = 0;
 }
 
 function redraw() {
     if (!gl || !shaderProgram) return;
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(shaderProgram);
-    for (const { buf, count, color } of allSegments) {
-        gl.uniform4fv(uColor, color);
+    // Les couches atténuées sont dessinées d'abord, la couche active passe par-dessus
+    const visible = [];
+    for (const seg of allSegments) {
+        const k = tagAlpha(seg.tag);
+        if (k > 0) visible.push({ seg, k });
+    }
+    visible.sort((a, b) => a.k - b.k);
+
+    for (const { seg: { buf, count, color }, k } of visible) {
+        gl.uniform4f(uColor, color[0], color[1], color[2], color[3] * k);
         gl.bindBuffer(gl.ARRAY_BUFFER, buf);
         gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 0, 0);
         gl.drawArrays(gl.LINES, 0, count);
@@ -159,11 +171,6 @@ function redraw() {
     refreshOverlay();
 }
 
-// ---------------------------------------------------------------------------
-// Map space → 2D canvas physical pixel
-// Exact inverse of shader: px = (mapX + panX) * scale + cw/2
-//                          py = -(mapY + panY) * scale + ch/2
-// ---------------------------------------------------------------------------
 function mapToCanvas(mx, my, targetCanvas) {
     const s    = window.scale   || 1;
     const panX = window.mapPanX || 0;
@@ -284,6 +291,11 @@ function redrawConnections() {
     const DIR = { N:[0,-1], S:[0,1], E:[1,0], W:[-1,0] };
 
     for (const c of storedConnections) {
+        // Mode couches : une connexion n'apparaît que si ses deux rooms sont visibles
+        // (les connexions sans tag, et celles des gates, restent toujours visibles)
+        const k = Math.min(tagAlpha(c.tagA), tagAlpha(c.tagB));
+        if (k <= 0) continue;
+        ctx.globalAlpha = k;
         const p1 = mapToCanvas(c.x1, c.y1, connCanvas);
         const p2 = mapToCanvas(c.x2, c.y2, connCanvas);
         const dist   = Math.hypot(p2.px - p1.px, p2.py - p1.py);
@@ -299,5 +311,6 @@ function redrawConnections() {
         );
         ctx.stroke();
     }
+    ctx.globalAlpha = 1;
     ctx.setLineDash([]);
 }

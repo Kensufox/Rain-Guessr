@@ -59,7 +59,39 @@
     <!-- Loading overlay (map load only, not game) -->
     <div id="loading-overlay">CHARGEMENT...</div>
 
+    <div id="layer-buttons" style="position:fixed; top:8px; right:8px; z-index:20; display:none; gap:4px;">
+        <button type="button" data-layer="0">C0</button>
+        <button type="button" data-layer="1">C1</button>
+        <button type="button" data-layer="2">C2</button>
+        <button type="button" data-layer="all">TOUT</button>
+    </div>
+
     <script>
+        function updateNavUI() {
+            if (typeof getNavigationState !== "function") return;
+            const { type, layer } = getNavigationState();
+            const box = document.getElementById("layer-buttons");
+            box.style.display = type === "layer" ? "flex" : "none";
+            box.querySelectorAll("button").forEach(b =>
+                b.style.outline = String(layer) === b.dataset.layer ? "2px solid #ff8800" : "");
+        }
+        window.addEventListener("mapLoaded", updateNavUI);
+        window.addEventListener("navigationChanged", updateNavUI);
+
+        window.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll("#layer-buttons button").forEach(b => {
+                b.onclick = () => setActiveLayer(b.dataset.layer === "all" ? "all" : +b.dataset.layer);
+            });
+        });
+
+        // Raccourcis : 1 / 2 / 3 = couche 0 / 1 / 2, 4 = toutes
+        window.addEventListener("keydown", e => {
+            if (typeof getNavigationState !== "function" || getNavigationState().type !== "layer") return;
+            if (e.target.matches && e.target.matches("input, textarea")) return;
+            const map = { "1": 0, "2": 1, "3": 2, "4": "all" };
+            if (e.key in map) setActiveLayer(map[e.key]);
+        });
+        
         window.gameActive = false;
         let mapReady = false;
         let timerInterval;
@@ -173,20 +205,22 @@
         }
 
         function checkResult() {
-            const result  = submitGuess(window.selectedRoom);
-            if (result) {
-                let totalScore = result.points;
-                console.log(`Points earned: ${totalScore}`);
-                locateRoom();
-                document.getElementById("answer-room-name").textContent = shortName(window.locatedRoom);
-                clearInterval(timerInterval);
-                document.getElementById("time-remaining").textContent = '00:00';
-                document.getElementById("btn-validate").disabled = true;
-                btn.disabled = true;
-                window.gameActive = false;
-                return result;
-            }
-            return null;
+            const result = submitGuess(window.selectedRoom);
+            if (!result) return null;
+
+            // 1) D'abord l'état de fin de manche, pour qu'une erreur plus bas ne laisse pas le jeu ouvert
+            window.gameActive = false;
+            document.getElementById("btn-validate").disabled = true;
+            clearInterval(timerInterval);
+            document.getElementById("time-remaining").textContent = '00:00';
+
+            // 2) Ensuite l'affichage
+            console.log(`Points earned: ${result.points}`);
+            locateRoom();
+            const answer = window.locatedRoom ? window.locatedRoom.split("/")[1] : window.currentRoom;
+            document.getElementById("answer-room-name").textContent = answer;
+
+            return result;
         }
     </script>
 </body>

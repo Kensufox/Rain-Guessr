@@ -15,6 +15,7 @@ async function fetchConnectionText(folder) {
     }
 }
 
+// Parse un fichier et alimente endpointsByPair (partagé entre TOUS les fichiers)
 function parseConnectionText(text, folder, endpointsByPair) {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
@@ -43,7 +44,7 @@ function parseConnectionText(text, folder, endpointsByPair) {
             const mapTileX = tileY;
             const mapTileY = tileX;
 
-            const boundaryA = getRoomBoundary(roomA, folder);
+            const boundaryA = getRoomBoundary(roomA, folder, roomB);
             if (!boundaryA) {
                 console.warn(`Missing boundary for ${roomA}`);
                 continue;
@@ -79,14 +80,21 @@ async function loadConnections(folders) {
 
     const connections = [];
     for (const e of Object.values(endpointsByPair)) {
-        const [cax, cay] = center(getRoomBoundary(e.first,  e.folder));
-        const [cbx, cby] = center(getRoomBoundary(e.second, e.folder));
+        const bFirst  = getRoomBoundary(e.first,  e.folder, e.second);
+        const bSecond = getRoomBoundary(e.second, e.folder, e.first);
+        const [cax, cay] = center(bFirst);
+        const [cbx, cby] = center(bSecond);
 
         const x1 = e.ax ?? cax, y1 = e.ay ?? cay, dir1 = e.dirA ?? '';
         const x2 = e.bx ?? cbx, y2 = e.by ?? cby, dir2 = e.dirB ?? '';
 
         if (x1 == null || x2 == null) continue;
-        connections.push({ x1, y1, dir1, x2, y2, dir2 });
+        // tagA/tagB : couche de chaque bout (undefined en mode 2D → toujours visible)
+        connections.push({
+            x1, y1, dir1, x2, y2, dir2,
+            tagA: bFirst?.layer  !== undefined ? { layer: bFirst.layer }  : null,
+            tagB: bSecond?.layer !== undefined ? { layer: bSecond.layer } : null
+        });
     }
 
     if (connections.length > 0) {
@@ -95,12 +103,24 @@ async function loadConnections(folders) {
     }
 }
 
-// Find the roomBoundaries entry for a room name
-function getRoomBoundary(roomName, region) {
+// Find the roomBoundaries entry for a room name.
+// hintRoom (optionnel) : en mode couches, une gate existe en deux copies (une dans chaque région).
+// On prend alors celle qui est dans la même région que hintRoom (la room à l'autre bout du lien).
+function getRoomBoundary(roomName, region, hintRoom) {
     const key = `${region}/${roomName}`;
     if (roomBoundaries[key]) return roomBoundaries[key];
+
+    const matches = [];
     for (const [k, v] of Object.entries(roomBoundaries)) {
-        if (k.toLowerCase().endsWith('/' + roomName)) return v;
+        if (k.toLowerCase().endsWith('/' + roomName)) matches.push([k, v]);
     }
-    return null;
+    if (matches.length > 1 && hintRoom) {
+        const hintKey = Object.keys(roomBoundaries).find(k => k.toLowerCase().endsWith('/' + hintRoom));
+        if (hintKey) {
+            const hintRegion = hintKey.split('/')[0];
+            const same = matches.find(([k]) => k.split('/')[0] === hintRegion);
+            if (same) return same[1];
+        }
+    }
+    return matches.length ? matches[0][1] : null;
 }

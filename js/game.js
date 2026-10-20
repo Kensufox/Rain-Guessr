@@ -20,10 +20,11 @@ const CAMPAIGNS = [
     "watcher",
     "inv" // do we keep that one ?
 ]
+window.NAV_MODES = ["flat", "layer"];
+window.NAV_STORAGE_KEY = "rainGuessrNav";
+window.navMode = loadSavedNav()
 window.campaign = "vanilla"
 window.guessTime = 30 //time in seconds
-const NAV_TYPES = ["flat", "layer"]
-window.navigationType = "flat"
 const MAX_GUESSES = 3
 window.guess_amount = MAX_GUESSES
 
@@ -41,6 +42,22 @@ function toggleDifficulty() {
     try { localStorage.setItem(DIFFICULTY_STORAGE_KEY, window.gameDifficulty); } catch (e) { /* ignore */ }
 
     console.log(window.gameDifficulty);
+}
+
+function loadSavedNav() {
+    try {
+        const t = localStorage.getItem(window.NAV_STORAGE_KEY);
+        if (window.NAV_MODES.includes(t)) return t;
+    } catch (e) { /* storage unavailable */ }
+    return "flat";
+}
+
+function toggleNav() {
+    window.navMode = window.navMode === "flat" ? "layer" : "flat";
+
+    try { localStorage.setItem(window.NAV_STORAGE_KEY, window.navMode); } catch (e) { /* ignore */ }
+
+    console.log(window.navMode);
 }
 
 // ── "Interesting crop" settings (normal mode) ────────────────────────────────
