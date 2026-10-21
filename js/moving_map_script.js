@@ -96,9 +96,13 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ── Tactile : 1 doigt = déplacer, 2 doigts = zoom ───────────────────────────
-(function () {
-    const MIN_SCALE = 0.01, MAX_SCALE = 50;      // mêmes bornes que room_locate.js
+// ── Tactile : 1 doigt = déplacer, 2 doigts = zoom (pincer) ──────────────────
+// Doit être posé dans un DOMContentLoaded : `canvas` (render.js) n'existe pas avant.
+window.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('canvas');
+    if (!el) return;
+
+    const MIN_SCALE = 0.01, MAX_SCALE = 50;      // mêmes bornes que la molette
     const pts = new Map();                       // pointerId → { x, y } en px CSS
     let last = null, dragged = false;
 
@@ -109,24 +113,24 @@ window.addEventListener('DOMContentLoaded', () => {
                  dist: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) };
     };
 
-    canvas.addEventListener("pointerdown", e => {
-        if (e.pointerType !== "touch") return;   // la souris reste gérée par le code existant
+    el.addEventListener('pointerdown', e => {
+        if (e.pointerType !== 'touch') return;   // la souris reste gérée par le code ci-dessus
         pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
         last = gesture();
         if (pts.size === 1) dragged = false;
     });
 
-    canvas.addEventListener("pointermove", e => {
-        if (e.pointerType !== "touch" || !pts.has(e.pointerId)) return;
+    el.addEventListener('pointermove', e => {
+        if (e.pointerType !== 'touch' || !pts.has(e.pointerId)) return;
         pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
         const g = gesture();
-        if (!last || last.n !== g.n) { last = g; return; }   // nombre de doigts changé : on repart
+        if (!last || last.n !== g.n || g.n > 2) { last = g; return; }   // nombre de doigts changé : on repart
 
-        const rect = canvas.getBoundingClientRect(), d = window.devicePixelRatio || 1;
-        const cw = canvas.width, ch = canvas.height;
+        const rect = el.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+        const cw = el.width, ch = el.height;
         const s = window.scale || 1, panX = window.mapPanX || 0, panY = window.mapPanY || 0;
 
-        // point carte qui était sous le geste (même formule que pixelToMap)
+        // point carte qui était sous le geste (même formule que la molette / pixelToMap)
         const mapX =  ((last.x - rect.left) * d - cw / 2) / s - panX;
         const mapY = -((last.y - rect.top)  * d - ch / 2) / s - panY;
 
@@ -145,11 +149,11 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     const end = e => { pts.delete(e.pointerId); last = pts.size ? gesture() : null; };
-    canvas.addEventListener("pointerup", end);
-    canvas.addEventListener("pointercancel", end);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
 
     // Un glissement ne doit pas sélectionner la room sous le doigt
-    window.addEventListener("click", e => {
+    window.addEventListener('click', e => {
         if (dragged) { e.stopPropagation(); e.preventDefault(); dragged = false; }
     }, true);
-})();
+});
