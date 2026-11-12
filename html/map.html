@@ -130,7 +130,7 @@
         }
 
         function startTimer() {
-            let timeRemaining = 90; //seconds
+            let timeRemaining = window.guessTime;
             updateTimerDisplay(timeRemaining);
 
             clearInterval(timerInterval);
@@ -170,7 +170,7 @@
             validateBtn.style.borderColor = "";
             validateBtn.style.color       = "";
             selName.textContent = "—";
-            window.guess_amount = MAX_GUESSES; // Reset for next round
+            window.guess_amount = window.maxGuesses;
             startTimer();
             if (typeof clearSelection === "function") clearSelection();
 

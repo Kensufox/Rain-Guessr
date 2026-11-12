@@ -8,6 +8,8 @@ const CROP_SIZE    = 256; // side length of the challenge image in pixels
 
 const GAME_DIFFICULTIES = ["normal", "hard"];
 const DIFFICULTY_STORAGE_KEY = "rainGuessrMode";
+const GUESS_TIME_STORAGE_KEY = "rainGuessrTime";
+const GUESS_COUNT_STORAGE_KEY = "rainGuessrGuessCount";
 // "normal" | "hard" — read by startGame()
 window.gameDifficulty = loadSavedMode();
 const CAMPAIGNS = [
@@ -24,9 +26,9 @@ window.NAV_MODES = ["flat", "layer"];
 window.NAV_STORAGE_KEY = "rainGuessrNav";
 window.navMode = loadSavedNav()
 window.campaign = "vanilla"
-window.guessTime = 30 //time in seconds
-const MAX_GUESSES = 3
-window.guess_amount = MAX_GUESSES
+window.guessTime = loadSavedNumber(GUESS_TIME_STORAGE_KEY, 90, 1, 3600);
+window.maxGuesses = loadSavedNumber(GUESS_COUNT_STORAGE_KEY, 3, 1, 99);
+window.guess_amount = window.maxGuesses;
 
 function loadSavedMode() {
     try {
@@ -36,12 +38,93 @@ function loadSavedMode() {
     return "normal";
 }
 
+function loadSavedNumber(key, defaultValue, min, max) {
+    try {
+        const value = Number(localStorage.getItem(key));
+        if (Number.isInteger(value) && value >= min && value <= max) return value;
+    } catch (e) { console.log(`localStorage unavailable, using default for ${key}`); }
+    return defaultValue;
+}
+
+function syncGameOptionLabels() {
+    document.querySelectorAll('[data-option="difficulty"]').forEach(function (button) {
+        const selected = button.dataset.value === window.gameDifficulty;
+        button.setAttribute("aria-pressed", String(selected));
+    });
+    document.querySelectorAll('[data-option="navigation"]').forEach(function (button) {
+        const selected = button.dataset.value === window.navMode;
+        button.setAttribute("aria-pressed", String(selected));
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    syncGameOptionLabels();
+
+    const optionsMenu = document.querySelector(".game-options");
+    const optionsToggle = document.querySelector(".options-toggle");
+    const optionsClose = document.querySelector(".menu-close");
+    if (optionsMenu && optionsToggle) {
+        function setOptionsOpen(isOpen) {
+            optionsMenu.classList.toggle("is-open", isOpen);
+            optionsToggle.setAttribute("aria-expanded", String(isOpen));
+        }
+
+        optionsToggle.addEventListener("click", function () {
+            setOptionsOpen(true);
+            if (optionsClose) optionsClose.focus();
+        });
+
+        if (optionsClose) {
+            optionsClose.addEventListener("click", function () {
+                setOptionsOpen(false);
+                optionsToggle.focus();
+            });
+        }
+
+        document.addEventListener("click", function (event) {
+            if (!optionsMenu.contains(event.target)) setOptionsOpen(false);
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && optionsMenu.classList.contains("is-open")) {
+                setOptionsOpen(false);
+                optionsToggle.focus();
+            }
+        });
+    }
+
+    const timeInput = document.getElementById("guess-time");
+    if (timeInput) {
+        timeInput.value = window.guessTime;
+        timeInput.addEventListener("change", function () {
+            if (!timeInput.reportValidity()) return;
+            window.guessTime = timeInput.valueAsNumber;
+            try { localStorage.setItem(GUESS_TIME_STORAGE_KEY, window.guessTime); } catch (e) { /* storage unavailable */ }
+        });
+    }
+
+    const guessCountInput = document.getElementById("guess-count");
+    if (guessCountInput) {
+        guessCountInput.value = window.maxGuesses;
+        guessCountInput.addEventListener("change", function () {
+            if (!guessCountInput.reportValidity()) return;
+            window.maxGuesses = guessCountInput.valueAsNumber;
+            try { localStorage.setItem(GUESS_COUNT_STORAGE_KEY, window.maxGuesses); } catch (e) { /* storage unavailable */ }
+        });
+    }
+});
+
 function toggleDifficulty() {
-    window.gameDifficulty = window.gameDifficulty === "hard" ? "normal" : "hard";
+    setGameDifficulty(window.gameDifficulty === "hard" ? "normal" : "hard");
+}
+
+function setGameDifficulty(difficulty) {
+    if (!GAME_DIFFICULTIES.includes(difficulty)) return;
+    window.gameDifficulty = difficulty;
 
     try { localStorage.setItem(DIFFICULTY_STORAGE_KEY, window.gameDifficulty); } catch (e) { /* ignore */ }
 
-    console.log(window.gameDifficulty);
+    syncGameOptionLabels();
 }
 
 function loadSavedNav() {
@@ -53,11 +136,16 @@ function loadSavedNav() {
 }
 
 function toggleNav() {
-    window.navMode = window.navMode === "flat" ? "layer" : "flat";
+    setNavigationMode(window.navMode === "flat" ? "layer" : "flat");
+}
+
+function setNavigationMode(mode) {
+    if (!window.NAV_MODES.includes(mode)) return;
+    window.navMode = mode;
 
     try { localStorage.setItem(window.NAV_STORAGE_KEY, window.navMode); } catch (e) { /* ignore */ }
 
-    console.log(window.navMode);
+    syncGameOptionLabels();
 }
 
 // ── "Interesting crop" settings (normal mode) ────────────────────────────────
