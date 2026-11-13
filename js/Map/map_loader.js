@@ -9,6 +9,8 @@ const GEOMETRY_SETS = ["vanilla"];
 
 // ── Couleurs des couches [r, g, b, a] ────────────────────────────────────────
 const LAYER_COLORS = {
+    water:      [0.08, 0.16, 0.67, 0.50], // eau (derrière) : rectangle plein depuis le bas de la room
+    waterFront: [0.16, 0.27, 0.90, 0.50], // eau "devant" (champ water.front de la géométrie)
     frame:     [0.00, 1.00, 0.00, 0.35], // cadre vert : room sans géométrie
     solid:     [1.00, 0.00, 0.00, 1.00], // murs (contours des polygones "solid")
     floors:    [0.85, 0.71, 0.24, 1.00], // sols traversables
@@ -185,11 +187,20 @@ function rectEdges(x1, y1, x2, y2, out) {
     out.push({ x1,       y1: y2,   x2: x1,   y2: y1 });
 }
 
-const GEOMETRY_LAYERS = ["frame", "solid", "floors", "poles", "shortcuts"];
-const makeLayerSet = () => ({ frame: [], solid: [], floors: [], poles: [], shortcuts: [] });
+const FILL_LAYERS = new Set(["water", "waterFront"]);   // dessinées en rectangles pleins (rectangles {x1,y1,x2,y2})
+const GEOMETRY_LAYERS = ["water", "waterFront", "frame", "solid", "floors", "poles", "shortcuts"];
+const makeLayerSet = () => ({ water: [], waterFront: [], frame: [], solid: [], floors: [], poles: [], shortcuts: [] });
 
 // Ajoute la géométrie d'une room (origine haut-gauche ox, oy en repère carte, Y vers le haut)
 function pushRoomSegments(set, geo, ox, oy) {
+    // Eau : "level" rangées de tuiles en partant du BAS de la room (convert_rooms.py : water.level / surface_y = h - level)
+    if (geo.water && geo.water.level > 0) {
+        const level = Math.min(geo.water.level, geo.h);
+        (geo.water.front ? set.waterFront : set.water).push({
+            x1: ox, y1: oy - geo.h, x2: ox + geo.w, y2: oy - geo.h + level
+        });
+    }
+
     // Murs : contour fermé de chaque polygone
     for (const poly of geo.solid || []) {
         for (let i = 0; i < poly.length; i++) {
@@ -219,7 +230,7 @@ function pushRoomSegments(set, geo, ox, oy) {
 // Un jeu de segments → lots prêts pour renderRoom (tag = filtre de visibilité, voir render.js)
 function pushBatches(scene, set, tag) {
     for (const name of GEOMETRY_LAYERS) {
-        if (set[name].length) scene.batches.push({ segments: set[name], color: LAYER_COLORS[name], tag });
+        if (set[name].length) scene.batches.push({ segments: set[name], color: LAYER_COLORS[name], tag, fill: FILL_LAYERS.has(name) });
     }
 }
 
@@ -332,7 +343,7 @@ function applyScene(scene) {
     clearRenderData();
     for (const k of Object.keys(roomBoundaries)) delete roomBoundaries[k];
     Object.assign(roomBoundaries, scene.boundaries);
-    for (const b of scene.batches) renderRoom(b.segments, b.color, b.tag);
+    for (const b of scene.batches) renderRoom(b.segments, b.color, b.tag, b.fill);
 }
 
 function redrawMap() {

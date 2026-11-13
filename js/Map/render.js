@@ -121,22 +121,33 @@ function setRenderTransform(mapOffsetX, mapOffsetY, scale) {
 // segments : [{x1,y1,x2,y2}] en coordonnées carte (tuiles, y vers le haut)
 // color    : [r,g,b,a] (0..1) — rouge par défaut comme avant
 // tag      : null ou { layer } — sert uniquement au filtre de visibilité (navigation par couches)
-function renderRoom(segments, color = [1, 0, 0, 1], tag = null) {
+// fill     : true → chaque élément est un rectangle { x1, y1, x2, y2 } dessiné plein (2 triangles), ex. l'eau
+function renderRoom(segments, color = [1, 0, 0, 1], tag = null, fill = false) {
     if (!shaderProgram) { console.error("renderRoom called before initRender"); return; }
 
-    const flatVertices = new Float32Array(segments.length * 4);
-    for (let i = 0; i < segments.length; i++) {
-        const s = segments[i];
-        flatVertices[i * 4]     = s.x1;
-        flatVertices[i * 4 + 1] = s.y1;
-        flatVertices[i * 4 + 2] = s.x2;
-        flatVertices[i * 4 + 3] = s.y2;
+    let flatVertices;
+    if (fill) {
+        flatVertices = new Float32Array(segments.length * 12);
+        for (let i = 0; i < segments.length; i++) {
+            const r = segments[i], o = i * 12;
+            flatVertices.set([r.x1, r.y1,  r.x2, r.y1,  r.x2, r.y2,
+                              r.x1, r.y1,  r.x2, r.y2,  r.x1, r.y2], o);
+        }
+    } else {
+        flatVertices = new Float32Array(segments.length * 4);
+        for (let i = 0; i < segments.length; i++) {
+            const s = segments[i];
+            flatVertices[i * 4]     = s.x1;
+            flatVertices[i * 4 + 1] = s.y1;
+            flatVertices[i * 4 + 2] = s.x2;
+            flatVertices[i * 4 + 3] = s.y2;
+        }
     }
 
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, flatVertices, gl.STATIC_DRAW);
-    allSegments.push({ buf, count: flatVertices.length / 2, color, tag });
+    allSegments.push({ buf, count: flatVertices.length / 2, color, tag, fill });
     // Pas de dessin immédiat : l'appelant fait redraw() une fois tout ajouté
     // (le dessin direct ignorait le filtre de couches et ne servait qu'au premier affichage).
 }
@@ -158,13 +169,14 @@ function redraw() {
         const k = tagAlpha(seg.tag);
         if (k > 0) visible.push({ seg, k });
     }
-    visible.sort((a, b) => a.k - b.k);
+    // À opacité égale, les remplissages (eau) passent avant les lignes pour ne jamais les recouvrir
+    visible.sort((a, b) => (a.k - b.k) || ((b.seg.fill ? 1 : 0) - (a.seg.fill ? 1 : 0)));
 
-    for (const { seg: { buf, count, color }, k } of visible) {
+    for (const { seg: { buf, count, color, fill }, k } of visible) {
         gl.uniform4f(uColor, color[0], color[1], color[2], color[3] * k);
         gl.bindBuffer(gl.ARRAY_BUFFER, buf);
         gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 0, 0);
-        gl.drawArrays(gl.LINES, 0, count);
+        gl.drawArrays(fill ? gl.TRIANGLES : gl.LINES, 0, count);
     }
     redrawConnections();
     // Redraw persistent overlays (selection + located room) on top
