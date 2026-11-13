@@ -270,9 +270,11 @@
   <div id="info-bar">Scroll to zoom · Right-drag to pan · Click to select · Drag selected to move</div>
   <div id="sel-label">—</div>
   <div class="sep"></div>
+  <button class="btn" onclick="document.getElementById('folder-input').click()">Open folder…</button>
+  <input type="file" id="folder-input" webkitdirectory multiple hidden onchange="loadFromFiles(this.files)">
   <button class="btn" onclick="resetSelected()">Reset pos</button>
   <button class="btn danger" onclick="resetAll()">Reset all</button>
-  <button class="btn primary" onclick="exportFiles()">Export ↓</button>
+  <button class="btn primary" onclick="exportFiles()">Export edits.json ↓</button>
 </div>
 
 <!-- Main -->
@@ -308,18 +310,15 @@
 // ============================================================
 // CONFIG — adjust path if your editor lives elsewhere
 // ============================================================
-const MAP_PATH = '../map/World/Regions/Rooms';
-
-// Positions ACTUELLES de la carte (celles que map.html utilise) : ce sont les fichiers exportés par cet
-// éditeur. L'ancien region_pos.txt (MAP_PATH) ne sert plus que de secours si json/region_pos.txt manque.
-const REGION_POS_URL   = '../json/region_pos.txt';
+// Folder = the export directory containing index.json and one <REGION>.json per region.
+// This editor defaults to the vanilla export in json/geometry/vanilla.
+// If fetch is blocked (file://) or the path is wrong, use the "Open folder…" button instead.
+const DATA_PATH = '../json/geometry/vanilla';
+const REGION_POS_URL = '../json/region_pos.txt';
 const ROOM_OFFSETS_URL = '../json/room_offsets.txt';
-
-// Même source que map.html : positions des rooms (map-data.json) + géométrie JSON par région.
-// map-data.json est généré par precompile-map.py (à relancer après avoir remplacé region_pos.txt).
-const MAP_DATA_URL  = '../json/map-data.json';
-const GEOMETRY_BASE = '../json/geometry';
-const GEOMETRY_SETS = ['vanilla'];   // par ordre de priorité, comme map_loader.js
+const MAP_DATA_URL = '../json/map-data.json';
+const EDITOR_TILE_SIZE = 20;
+const OFFSCREEN_W = 1200, OFFSCREEN_H = 400;   // ofscreensize in the Python script
 
 // ============================================================
 // STATE
@@ -337,7 +336,8 @@ let isPanning = false, panStartX = 0, panStartY = 0;
 let regionPos    = {};   // { CC: [x,y], ... }  — original from file
 let regionOffset = {};   // { CC: [dx,dy], ... } — editor adjustments
 let roomOffset   = {};   // { "CC/cc_a01": [dx,dy], ... }
-let roomOffsetInitial = {};   // décalages chargés depuis json/room_offsets.txt : retour de "Reset" 
+let roomOffsetInitial = {};
+
 let regionRooms  = {};   // { CC: [ {key,pos_x,pos_y,width,height,segs}, ... ] }
 let regionBounds = {};   // { CC: {minX,minY,maxX,maxY} } in map space (before offset)
 let allRoomData  = {};   // key → {pos_x,pos_y,width,height,segs,region}
@@ -381,132 +381,268 @@ function setLoadMsg(msg) {
 }
 
 // ============================================================
-// DATA LOADING
+// DATA LOADING (room geometry export: index.json plus one <REGION>.json per region)
 // ============================================================
-async function loadData() {
-  setLoadMsg('Loading region positions...');
-  let posRes = await fetch(REGION_POS_URL).catch(() => null);
-  if (!posRes || !posRes.ok) {
-    console.warn(`${REGION_POS_URL} introuvable → ancien ${MAP_PATH}/region_pos.txt (positions de base)`);
-    posRes = await fetch(MAP_PATH + '/region_pos.txt');
-  }
-  const posText = await posRes.text();
-  posText.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line => {
-    const [k,v] = line.split(':');
-    if (k && v) regionPos[k.trim()] = v.split('x').map(Number);
-  });
+let regionInitial = {};
+let roomPositions = null;   // Room positions in editor pixels, measured from bottom-left.
+let roomPositionOverrides = {};
+let importedRegionPositions = {};
+let importedRoomOffsets = {};
+let mapRoomPositions = {};
 
-  // Décalages de rooms actuels (même format que l'export : "CC/cc_a02:36x36"), indexés par nom de room
-  const savedRoomOffsets = {};
+async function fetchJSON(url) {
+  try { const r = await fetch(url); return r.ok ? await r.json() : null; }
+  catch (e) { return null; }
+}
+
+async function fetchText(url) {
   try {
-    const offRes = await fetch(ROOM_OFFSETS_URL);
-    if (offRes.ok) {
-      (await offRes.text()).split('\n').forEach(line => {
-        const m = line.trim().match(/^[^/]+\/([^:]+):(-?\d+)x(-?\d+)$/);
-        if (m) savedRoomOffsets[m[1].toLowerCase()] = [parseInt(m[2]), parseInt(m[3])];
-      });
-    }
-  } catch (e) { console.warn('room_offsets.txt non chargé :', e); }
-
-  setLoadMsg('Loading map data...');
-  const mdRes = await fetch(MAP_DATA_URL);
-  if (!mdRes.ok) throw new Error(`${MAP_DATA_URL} introuvable (${mdRes.status}) — lance precompile-map.py`);
-  const mapData = await mdRes.json();
-  const regions = Object.keys(mapData.rooms);
-
-  // Init offsets to zero (toutes les régions de region_pos.txt, même sans rooms comme GW)
-  new Set([...Object.keys(regionPos), ...regions]).forEach(key => {
-    if (!regionOffset[key]) regionOffset[key] = [0, 0];
-  });
-  regions.forEach(key => { regionRooms[key] = []; });
-
-  setLoadMsg('Loading room geometry...');
-  const geometry = await loadGeometry(regions);
-
-  let missingGeo = 0;
-  regions.forEach(key => {
-    mapData.rooms[key].forEach(room => {
-      const roomName = room.fullName.toLowerCase();   // même format de clé qu'avant : "su_b04"
-      const geo = geometry[roomName];
-      if (!geo) missingGeo++;
-      const parsed = {
-        regionKey: key,
-        roomName,
-        key: `${key}/${roomName}`,
-        pos_x: room.position.x,
-        pos_y: room.position.y,
-        width:  geo ? geo.w : room.width,    // la géométrie fait foi pour la taille
-        height: geo ? geo.h : room.height,
-        segs:   geo ? geometryToSegs(geo) : []
-      };
-      regionRooms[key].push(parsed);
-      allRoomData[parsed.key] = parsed;
-      const saved = savedRoomOffsets[roomName] || [0, 0];
-      roomOffset[parsed.key]        = [...saved];
-      roomOffsetInitial[parsed.key] = [...saved];
-    });
-  });
-  if (missingGeo) console.warn(`${missingGeo} room(s) sans géométrie (boîte seule affichée)`);
-
-  // Compute region bounding boxes
-  computeRegionBounds();
-  document.getElementById('status-count').textContent =
-    `regions: ${Object.keys(regionPos).length} · rooms: ${Object.keys(allRoomData).length}`;
-}
-
-// Charge json/geometry/<jeu>/<REGION>.json pour toutes les régions → { "su_b04": {w,h,solid,floors,...} }
-async function loadGeometry(regions) {
-  const out = {};
-  for (const set of GEOMETRY_SETS) {            // priorité : le 1er jeu qui contient la room gagne
-    const files = await Promise.all([...regions, 'GATES'].map(region =>   // GATES.json : géométrie des gates
-      fetch(`${GEOMETRY_BASE}/${set}/${region.toUpperCase()}.json`)
-        .then(r => (r.ok ? r.json() : null))
-        .catch(() => null)
-    ));
-    files.filter(Boolean).forEach(file => {
-      Object.entries(file).forEach(([k, g]) => {
-        const name = k.toLowerCase();
-        if (name.includes('(')) return;   // ex. gate_lf_su(error!)
-        if (!(name in out)) out[name] = g;
-      });
-    });
+    const response = await fetch(url);
+    return response.ok ? await response.text() : null;
+  } catch (e) {
+    return null;
   }
-  return out;
 }
 
-// Géométrie JSON → segments locaux { lx1, ly1, lx2, ly2 } (tuiles, Y vers le bas depuis le coin haut-gauche),
-// le même format que l'ancien parseRoom() : drawStep2 fait y = baseY - ly.
-function geometryToSegs(geo) {
-  const segs = [];
-  (geo.solid || []).forEach(poly => {             // contour fermé de chaque polygone de murs
-    for (let i = 0; i < poly.length; i++) {
-      const a = poly[i], b = poly[(i + 1) % poly.length];
-      segs.push({ lx1: a[0], ly1: a[1], lx2: b[0], ly2: b[1] });
+function parseRegionPositions(text) {
+  const positions = {};
+  (text || '').split(/\r?\n/).forEach(line => {
+    const match = line.trim().match(/^(\w+):(-?\d+)x(-?\d+)$/i);
+    if (match) positions[match[1].toUpperCase()] = [Number(match[2]), Number(match[3])];
+  });
+  return positions;
+}
+
+function parseRoomOffsets(text) {
+  const offsets = {};
+  (text || '').split(/\r?\n/).forEach(line => {
+    const match = line.trim().match(/^([^/]+)\/([^:]+):(-?\d+)x(-?\d+)$/i);
+    if (match) {
+      offsets[`${match[1].toUpperCase()}/${match[2].toLowerCase()}`] =
+        [Number(match[3]), Number(match[4])];
     }
   });
-  [geo.floors, geo.poles_v, geo.poles_h].forEach(list => {
-    (list || []).forEach(s => segs.push({ lx1: s[0], ly1: s[1], lx2: s[2], ly2: s[3] }));
+  return offsets;
+}
+
+function buildMapRoomPositions(mapData) {
+  const positions = {};
+  Object.values((mapData && mapData.rooms) || {}).forEach(rooms => {
+    rooms.forEach(room => {
+      if (!room.fullName || !room.position) return;
+      positions[room.fullName.toLowerCase()] = [
+        (room.position.x / 2) * EDITOR_TILE_SIZE,
+        (room.position.y / 2 - room.height) * EDITOR_TILE_SIZE
+      ];
+    });
   });
-  return segs;
+  return positions;
+}
+
+async function loadData() {
+  setLoadMsg('Loading map positions and region index...');
+  const [index, regionPositionsText, roomOffsetsText, mapData, edits] = await Promise.all([
+    fetchJSON(DATA_PATH + '/index.json'),
+    fetchText(REGION_POS_URL),
+    fetchText(ROOM_OFFSETS_URL),
+    fetchJSON(MAP_DATA_URL),
+    fetchJSON(DATA_PATH + '/edits.json')
+  ]);
+  importedRegionPositions = parseRegionPositions(regionPositionsText);
+  importedRoomOffsets = parseRoomOffsets(roomOffsetsText);
+  mapRoomPositions = buildMapRoomPositions(mapData);
+  roomPositionOverrides = (edits && edits.positions) || {};
+
+  if (!index || typeof index !== 'object') {
+    document.getElementById('info-bar').textContent =
+      `Could not load ${DATA_PATH}/index.json — use "Open folder…" and select json/geometry/vanilla.`;
+    return;
+  }
+  const keys = [...new Set(Object.values(index)
+    .map(entry => entry && entry.region)
+    .filter(region => typeof region === 'string' && region.length > 0))].sort();
+
+  setLoadMsg('Loading regions...');
+  const jsons = {};
+  await Promise.all(keys.map(async k => {
+    const rooms = await fetchJSON(`${DATA_PATH}/${k}.json`);
+    if (rooms) jsons[k] = { __rooms: rooms };
+    else console.warn(`No ${k}.json in ${DATA_PATH}`);
+  }));
+  roomPositions = { ...mapRoomPositions, ...roomPositionOverrides };
+  ingestAll(jsons, edits);
+  if (!Object.keys(jsons).length) {
+    document.getElementById('info-bar').textContent =
+      `No region files found in ${DATA_PATH} — use "Open folder…" and select json/geometry/vanilla.`;
+  }
+}
+
+async function loadFromFiles(fileList) {
+  const jsons = {};
+  let edits = null, positions = null, regionPositionsText = null, roomOffsetsText = null, mapData = null;
+  const reads = [];
+  for (const f of fileList) {
+    const parts = (f.webkitRelativePath || f.name).split('/');
+    const name = parts[parts.length - 1];
+    const SKIP = ['index.json', 'report.json', 'edits.json', 'positions.json', 'region.json'];
+    if (name === 'region_pos.txt') {
+      reads.push(f.text().then(t => { regionPositionsText = t; }));
+    } else if (name === 'room_offsets.txt') {
+      reads.push(f.text().then(t => { roomOffsetsText = t; }));
+    } else if (name === 'map-data.json') {
+      reads.push(f.text().then(t => { mapData = JSON.parse(t); })
+        .catch(e => console.warn('Bad map-data.json', e)));
+    } else if (name.endsWith('.json') && !SKIP.includes(name) && parts.length >= 2) {
+      // Geometry export: <game>/<REGION>.json = { room: {w,h,solid,floors,...} }
+      const key = name.slice(0, -5);
+      reads.push(f.text().then(t => { jsons[key] = { __rooms: JSON.parse(t) }; })
+                         .catch(e => console.warn('Bad ' + name, e)));
+    } else if (name === 'positions.json') {
+      reads.push(f.text().then(t => { positions = JSON.parse(t); }).catch(e => console.warn('Bad positions.json', e)));
+    } else if (name === 'region.json' && parts.length >= 2) {
+      const key = parts[parts.length - 2];
+      reads.push(f.text().then(t => { jsons[key] = JSON.parse(t); })
+                         .catch(e => console.warn('Bad region.json for ' + key, e)));
+    } else if (name === 'edits.json' && parts.length <= 2) {
+      reads.push(f.text().then(t => { edits = JSON.parse(t); })
+                         .catch(e => console.warn('Bad edits.json', e)));
+    }
+  }
+  await Promise.all(reads);
+  importedRegionPositions = parseRegionPositions(regionPositionsText);
+  importedRoomOffsets = parseRoomOffsets(roomOffsetsText);
+  mapRoomPositions = buildMapRoomPositions(mapData);
+  roomPositionOverrides = positions || (edits && edits.positions) || {};
+  roomPositions = { ...mapRoomPositions, ...roomPositionOverrides };
+  ingestAll(jsons, edits);
+  document.getElementById('info-bar').textContent =
+    'Scroll to zoom · Right-drag to pan · Click to select · Drag selected to move';
+  setStep(1);
+  fitAll();
+}
+
+function ingestAll(jsons, edits) {
+  regionPos = {}; regionOffset = {}; roomOffset = {}; roomOffsetInitial = {};
+  regionRooms = {}; regionBounds = {}; allRoomData = {}; regionInitial = {};
+  selectedRegion = null; selectedRoom = null; step2Region = null;
+
+  Object.keys(jsons).forEach(key => {
+    const baseRegionPosition = importedRegionPositions[key];
+    regionPos[key] = baseRegionPosition
+      ? baseRegionPosition.map(value => value * EDITOR_TILE_SIZE)
+      : [0, 0];
+    regionOffset[key] = [0, 0];
+    regionRooms[key] = jsons[key].__rooms ? parseRooms(key, jsons[key].__rooms, roomPositions)
+                                          : parseRegion(key, jsons[key]);
+    regionRooms[key].forEach(r => {
+      allRoomData[r.key] = r;
+      const importedOffset = importedRoomOffsets[`${r.regionKey.toUpperCase()}/${r.roomName.toLowerCase()}`];
+      const hasSavedPosition = Object.prototype.hasOwnProperty.call(roomPositionOverrides, r.roomName);
+      roomOffset[r.key] = importedOffset && !hasSavedPosition
+        ? importedOffset.map(value => value * EDITOR_TILE_SIZE)
+        : [0, 0];
+    });
+  });
+
+  // restore previous edits (cumulative: edits.json is re-read, never overwritten blindly)
+  const savedRooms = (edits && edits.rooms) || {};
+  Object.keys(savedRooms).forEach(k => {
+    if (roomOffset[k]) roomOffset[k] = savedRooms[k].map(Number);
+    else console.warn('edits.json: unknown room ' + k);
+  });
+  Object.keys(roomOffset).forEach(k => { roomOffsetInitial[k] = [...roomOffset[k]]; });
+  computeRegionBounds();
+
+  // region placement: saved position, otherwise simple shelf layout
+  const savedRegions = (edits && edits.regions) || {};
+  const keys = Object.keys(regionPos).sort();
+  let totalArea = 0;
+  keys.forEach(k => { const b = regionBounds[k]; if (b) totalArea += (b.maxX-b.minX)*(b.maxY-b.minY); });
+  const maxRow = Math.sqrt(totalArea) * 1.3, gap = 400;
+  let cx = 0, cy = 0, rowH = 0;
+  keys.forEach(k => {
+    const b = regionBounds[k];
+    if (savedRegions[k]) {
+      regionOffset[k] = [
+        Number(savedRegions[k][0]) - regionPos[k][0],
+        Number(savedRegions[k][1]) - regionPos[k][1]
+      ];
+    }
+    else if (b) {
+      if (importedRegionPositions[k]) {
+        regionInitial[k] = [0, 0];
+        return;
+      }
+      const w = b.maxX - b.minX, h = b.maxY - b.minY;
+      if (cx > 0 && cx + w > maxRow) { cx = 0; cy -= rowH + gap; rowH = 0; }
+      regionOffset[k] = [Math.round(cx - b.minX), Math.round(cy - b.maxY)];
+      cx += w + gap; rowH = Math.max(rowH, h);
+    }
+    regionInitial[k] = [...regionOffset[k]];
+  });
+
+  document.getElementById('status-count').textContent =
+    `regions: ${keys.length} · rooms: ${Object.keys(allRoomData).length} · region positions: ${Object.keys(importedRegionPositions).length} · room offsets: ${Object.keys(importedRoomOffsets).length}`;
+}
+
+// convert_rooms.py : 1 tuile = 20 px de room, y vers le bas dans le JSON -> converti en Y vers le haut
+function parseRooms(key, obj, pos) {
+  const T = 20, rooms = []; let cx = 0, cy = 0, rowH = 0;
+  Object.keys(obj).sort().forEach(name => {
+    const d = obj[name], W = d.w * T, H = d.h * T;
+    let ox, oy;
+    if (pos && pos[name]) { ox = pos[name][0]; oy = pos[name][1]; }
+    else {   // pas de position connue : rangement en grille
+      if (cx > 0 && cx + W > 8000) { cx = 0; cy -= rowH + 100; rowH = 0; }
+      ox = cx; oy = cy - H; cx += W + 100; rowH = Math.max(rowH, H);
+    }
+    const px = x => ox + x * T, py = y => oy + H - y * T;
+    const solid = (d.solid || []).map(poly => poly.map(q => [px(q[0]), py(q[1])]));
+    const lines = solid.map(poly => poly.concat([poly[0]]));
+    (d.floors || []).forEach(f => lines.push([[px(f[0]), py(f[1] + 0.5)], [px(f[2]), py(f[3] + 0.5)]]));
+    (d.poles_v || []).concat(d.poles_h || []).forEach(q => lines.push([[px(q[0]), py(q[1])], [px(q[2]), py(q[3])]]));
+    rooms.push({ regionKey: key, roomName: name, key: `${key}/${name}`,
+      minX: ox, minY: oy, maxX: ox + W, maxY: oy + H, width: W, height: H,
+      lines, solid, water: d.water ? { level: d.water.level, front: d.water.front } : null, offscreen: false });
+  });
+  return rooms;
+}
+
+function parseRegion(key, feat) {
+  const geo = {};
+  (feat.geo_features || []).forEach(f => {
+    if (f.properties && f.geometry) geo[f.properties.room] = f.geometry.coordinates || [];
+  });
+  const rooms = [];
+  (feat.room_features || []).forEach(f => {
+    const ring = f.geometry && f.geometry.coordinates && f.geometry.coordinates[0];
+    if (!ring || !ring.length) return;
+    const xs = ring.map(p => p[0]), ys = ring.map(p => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const name = f.properties.name;
+    rooms.push({
+      regionKey: key, roomName: name, key: `${key}/${name}`,
+      minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY,
+      lines: geo[name] || [],
+      offscreen: (maxX - minX === OFFSCREEN_W && maxY - minY === OFFSCREEN_H)
+    });
+  });
+  return rooms;
 }
 
 function computeRegionBounds() {
+  regionBounds = {};
   Object.keys(regionRooms).forEach(key => {
-    const rpos = regionPos[key];
-    if (!rpos) { console.warn(`No region_pos entry for ${key}`); return; }
-    const rooms = regionRooms[key];
-    if (!rooms.length) { console.warn(`No rooms loaded for ${key}`); return; }
-    let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
-    rooms.forEach(room => {
-      const x1 = room.pos_x/2 + rpos[0];
-      const y1 = room.pos_y/2 + rpos[1];
-      minX = Math.min(minX, x1);
-      minY = Math.min(minY, y1 - room.height);
-      maxX = Math.max(maxX, x1 + room.width);
-      maxY = Math.max(maxY, y1);
+    let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity, n=0;
+    regionRooms[key].forEach(room => {
+      if (room.offscreen) return;       // the offscreen box would blow up the region bounds
+      const o = roomOffset[room.key] || [0,0];
+      minX = Math.min(minX, room.minX + o[0]); minY = Math.min(minY, room.minY + o[1]);
+      maxX = Math.max(maxX, room.maxX + o[0]); maxY = Math.max(maxY, room.maxY + o[1]);
+      n++;
     });
-    regionBounds[key] = { minX, minY, maxX, maxY };
-    console.log(`Bounds for ${key}:`, regionBounds[key]);
+    if (n) regionBounds[key] = { minX, minY, maxX, maxY };
   });
 }
 
@@ -532,10 +668,10 @@ function getRoomMapPos(room) {
   const roff = regionOffset[room.regionKey] || [0,0];
   const rpos = regionPos[room.regionKey];
   if (!rpos) return null;
-  const roff2 = roomOffset[room.key] || [0,0];
-  const x1 = room.pos_x/2 + rpos[0] + roff[0] + roff2[0];
-  const y1 = room.pos_y/2 + rpos[1] + roff[1] + roff2[1];
-  return { x1, y1, x2: x1+room.width, y2: y1-room.height };
+  const o = roomOffset[room.key] || [0,0];
+  const dx = rpos[0] + roff[0] + o[0], dy = rpos[1] + roff[1] + o[1];
+  // y1 = top edge (larger Y), y2 = bottom edge — same convention as before
+  return { x1: room.minX + dx, y1: room.maxY + dy, x2: room.maxX + dx, y2: room.minY + dy };
 }
 
 function getRegionScreenBounds(key) {
@@ -604,6 +740,7 @@ function drawStep1() {
     // Room boundaries (only if rooms are loaded)
     if (b) {
       (regionRooms[key] || []).forEach(room => {
+        if (room.offscreen) return;
         const rp = getRoomMapPos(room);
         if (!rp) return;
         const sp1 = mToS(rp.x1, rp.y2);
@@ -639,29 +776,43 @@ function drawStep2() {
   const roff = regionOffset[key] || [0,0];
 
   regionRooms[key].forEach(room => {
-    const roff2 = roomOffset[room.key] || [0,0];
+    const o = roomOffset[room.key] || [0,0];
     const isSel = selectedRoom === room.key;
+    const dx = rpos[0] + roff[0] + o[0];
+    const dy = rpos[1] + roff[1] + o[1];
 
-    const baseX = room.pos_x/2 + rpos[0] + roff[0];
-    const baseY = room.pos_y/2 + rpos[1] + roff[1];
-    const ox = roff2[0], oy = roff2[1];
+    // Eau : rectangle bleu depuis le bas de la room, puis les solides le recouvrent
+    // (remplissage evenodd) -> l'eau reste dans la géométrie (formes, pentes).
+    if (room.water && room.water.level > 0) {
+      const a = mToS(room.minX + dx, room.minY + dy + room.water.level * 20);
+      const b = mToS(room.maxX + dx, room.minY + dy);
+      ctx.fillStyle = room.water.front ? 'rgba(40,70,230,0.8)' : 'rgba(20,40,170,0.95)';
+      ctx.fillRect(a.sx, a.sy, b.sx - a.sx, b.sy - a.sy);
+      ctx.beginPath();
+      room.solid.forEach(loop => {
+        loop.forEach((pt, i) => { const sp = mToS(dx + pt[0], dy + pt[1]); if (i) ctx.lineTo(sp.sx, sp.sy); else ctx.moveTo(sp.sx, sp.sy); });
+        ctx.closePath();
+      });
+      ctx.fillStyle = '#0a0c0f';   // = --bg
+      ctx.fill('evenodd');
+    }
 
-    // Draw geometry segments
+    // Geometry strokes (already Y-up map space, no flip needed)
     ctx.strokeStyle = isSel ? '#4ae8c8' : 'rgba(74,232,200,0.5)';
     ctx.lineWidth   = isSel ? 1.5 : 0.8;
-    room.segs.forEach(s => {
-      const p1 = mToS(baseX + s.lx1 + ox, baseY - s.ly1 + oy);
-      const p2 = mToS(baseX + s.lx2 + ox, baseY - s.ly2 + oy);
+    room.lines.forEach(line => {
+      if (line.length < 2) return;
       ctx.beginPath();
-      ctx.moveTo(p1.sx, p1.sy);
-      ctx.lineTo(p2.sx, p2.sy);
+      line.forEach((pt, i) => {
+        const sp = mToS(dx + pt[0], dy + pt[1]);
+        if (i === 0) ctx.moveTo(sp.sx, sp.sy); else ctx.lineTo(sp.sx, sp.sy);
+      });
       ctx.stroke();
     });
 
     // Bounding box
-    const bx1 = baseX + ox, by1 = baseY + oy;
-    const sp1  = mToS(bx1, by1 - room.height);
-    const sp2  = mToS(bx1 + room.width, by1);
+    const sp1 = mToS(room.minX + dx, room.maxY + dy);
+    const sp2 = mToS(room.maxX + dx, room.minY + dy);
     ctx.strokeStyle = isSel ? '#e8c84a' : 'rgba(232,200,74,0.25)';
     ctx.lineWidth   = isSel ? 1.5 : 0.5;
     ctx.setLineDash(isSel ? [] : [4,4]);
@@ -669,12 +820,11 @@ function drawStep2() {
     ctx.setLineDash([]);
 
     // Room label
-    if (zoom > 0.3) {
+    if (zoom > 0.03) {
       ctx.fillStyle = isSel ? '#e8c84a' : 'rgba(200,208,220,0.5)';
-      ctx.font = `${Math.max(8, Math.min(13, zoom*40))}px "Share Tech Mono", monospace`;
+      ctx.font = `${Math.max(8, Math.min(13, zoom*100))}px "Share Tech Mono", monospace`;
       ctx.textAlign = 'center';
-      const mid = mToS(bx1 + room.width/2, by1 - room.height/2);
-      ctx.fillText(room.roomName, mid.sx, mid.sy);
+      ctx.fillText(room.roomName, (sp1.sx+sp2.sx)/2, (sp1.sy+sp2.sy)/2);
     }
   });
 }
@@ -699,6 +849,7 @@ function setStep(s) {
   if (s === 1) {
     document.getElementById('panel-header').textContent = 'Regions';
     document.getElementById('btn-edit-rooms').style.display = 'none';
+    computeRegionBounds();
     buildPanelList(Object.keys(regionPos).sort(), key => selectRegion(key), () => selectedRegion);
   } else {
     document.getElementById('panel-header').textContent = 'Rooms — ' + step2Region;
@@ -814,47 +965,48 @@ function centerSelected() {
 // ============================================================
 function resetSelected() {
   if (step===1 && selectedRegion) {
-    regionOffset[selectedRegion] = [0,0];
+    regionOffset[selectedRegion] = [...(regionInitial[selectedRegion] || [0,0])];
     updateCoordInputs();
   } else if (step===2 && selectedRoom) {
-    roomOffset[selectedRoom] = [...(roomOffsetInitial[selectedRoom] || [0,0])];   // = valeur chargée
+    roomOffset[selectedRoom] = [...(roomOffsetInitial[selectedRoom] || [0,0])];
     updateCoordInputs();
   }
   draw();
 }
 
 function resetAll() {
-  if (!confirm('Reset ALL positions to the loaded ones (json/region_pos.txt + json/room_offsets.txt)?')) return;
-  Object.keys(regionOffset).forEach(k => regionOffset[k] = [0,0]);
+  if (!confirm('Reset ALL positions to the state at load time?')) return;
+  Object.keys(regionOffset).forEach(k => regionOffset[k] = [...(regionInitial[k] || [0,0])]);
   Object.keys(roomOffset).forEach(k   => roomOffset[k]   = [...(roomOffsetInitial[k] || [0,0])]);
   updateCoordInputs();
   draw();
 }
 
+// edits.json:
+//   regions: absolute world position of each region (editor layout only)
+//   rooms:   offset in room px added to that room's roomcoords (only non-zero)
 function exportFiles() {
-  // 1. region_pos.txt — absolute positions (base + offset)
-  let regionPosOut = '';
-  Object.keys(regionPos).sort().forEach(key => {
-    const base = regionPos[key];
-    const off  = regionOffset[key] || [0,0];
-    regionPosOut += `${key}:${base[0]+off[0]}x${base[1]+off[1]}\n`;
+  const out = { version: 1, regions: {}, rooms: {} };
+  Object.keys(regionPos).sort().forEach(k => {
+    const b = regionPos[k], o = regionOffset[k] || [0,0];
+    out.regions[k] = [b[0]+o[0], b[1]+o[1]];
   });
-  downloadFile('region_pos.txt', regionPosOut);
-
-  // 2. room_offsets.txt — per-room dx/dy offsets (only non-zero)
-  const nonZero = Object.entries(roomOffset).filter(([,v]) => v[0]!==0 || v[1]!==0);
-  if (nonZero.length > 0) {
-    let roomOffOut = '';
-    nonZero.forEach(([key,[dx,dy]]) => { roomOffOut += `${key}:${dx}x${dy}\n`; });
-    downloadFile('room_offsets.txt', roomOffOut);
-  }
+  out.positions = {};
+  Object.keys(roomOffset).sort().forEach(k => {
+    const v = roomOffset[k], r = allRoomData[k];
+    if (r && r.solid) out.positions[r.roomName] = [r.minX + v[0], r.minY + v[1]];   // convert_rooms : absolu
+    else if (v[0] !== 0 || v[1] !== 0) out.rooms[k] = v;
+  });
+  downloadFile('edits.json', JSON.stringify(out, null, 1), 'application/json');
 }
 
-function downloadFile(name, content) {
+function downloadFile(name, content, type) {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+  const url = URL.createObjectURL(new Blob([content], { type: type || 'text/plain' }));
+  a.href = url;
   a.download = name;
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ============================================================

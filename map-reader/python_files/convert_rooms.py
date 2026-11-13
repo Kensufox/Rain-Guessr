@@ -68,6 +68,14 @@ def read_room(path, override=None):
     except ValueError:
         return None, [problem("ignoree", "IGNOREE : pas une room (settings, world_xx...)")]
     header = (w, h)
+    # Ligne 2 du fichier brut : "largeur*hauteur|niveau_eau|eau_devant" (ex. "54*35|-1|0")
+    # niveau_eau = -1 : pas d'eau ; sinon nombre de rangées de tuiles d'eau en partant du BAS.
+    parts = lines[1].strip().split("|")
+    try:
+        water_level = int(parts[1]) if len(parts) > 1 else -1
+    except ValueError:
+        water_level = -1
+    water_front = len(parts) > 2 and parts[2].strip() == "1"
     # Fichier brut du jeu : tuiles à la ligne 12 (lignes 6 à 9 vides). Version réduite : dernière ligne.
     tile_line = raw[11] if len(raw) >= 12 else lines[-1]
     toks = tile_line.split("|")
@@ -115,7 +123,8 @@ def read_room(path, override=None):
         problems.append(problem("tuile_illisible",
             f"{len(bad_cells)} tuile(s) illisible(s), remplacée(s) par de l'air", bad_cells))
     room = {"name": name, "w": w, "h": h, "tiles": tiles, "header": header,
-            "n_tiles": n, "bad": {(c["x"], c["y"]) for c in bad_cells}}
+            "n_tiles": n, "bad": {(c["x"], c["y"]) for c in bad_cells},
+            "water_level": water_level, "water_front": water_front, "water_raw": water_level}
     return room, problems
 
 
@@ -248,7 +257,7 @@ def extract(room):
             if on and start is None: start = x
             if not on and start is not None:
                 floors.append([start, y, x, y]); start = None
-    return {
+    out = {
         "name": room["name"], "w": w, "h": h,
         "solid": [[list(p) for p in poly] for poly in polys],
         "floors": floors,
@@ -258,6 +267,11 @@ def extract(room):
                       if tiles[y][x][0] == SHORTCUT],
         "broken_slopes": [list(c) for c in unresolved],
     }
+    # Eau : rangées remplies depuis le bas de la room (y vers le bas : de h - level à h)
+    if 0 <= room["water_level"]:
+        level = min(room["water_level"], h)
+        out["water"] = {"level": level, "front": room["water_front"], "surface_y": h - level}
+    return out
 
 
 def selfcheck(room, data):
@@ -347,7 +361,8 @@ def load_fixes(path):
         for xy, t in v.get("tiles", {}).items():
             x, y = (int(n) for n in xy.split(","))
             tiles[(x, y)] = int(t)
-        out[key.lower()] = {"tiles": tiles, "reviewed": v.get("reviewed")}
+        out[key.lower()] = {"tiles": tiles, "reviewed": v.get("reviewed"),
+                            "water": v.get("water")}   # -1 = supprimer l'eau, N = forcer N rangées
     return out
 
 
@@ -407,6 +422,7 @@ def main():
         return
 
     report, counts = {}, {}
+    water_rows = []   # pour water.txt
     for game, rooms in trees.items():
         index, done, bundles = {}, 0, {}
         for key, (path, region) in rooms.items():
@@ -419,6 +435,11 @@ def main():
                                                "header": [0, 0], "n_tiles": 0, "size": [0, 0],
                                                "problems": problems}
                 continue
+            if fx.get("water") is not None:      # correction manuelle dans fixes.json
+                room["water_level"] = int(fx["water"])
+            if room["water_raw"] >= 0 or room["water_level"] >= 0:
+                water_rows.append((game, key, region.upper(), room["h"], room["water_raw"],
+                                   room["water_level"], room["water_front"]))
             data = extract(room)
             if data["broken_slopes"]:
                 cells = []
@@ -457,6 +478,12 @@ def main():
         counts[game] = done
         print(f"{game:9s}: {done} rooms converties")
 
+    with open(os.path.join(dst, "water.txt"), "w", encoding="utf-8") as out:
+        out.write("Rooms avec eau (valeur brute = 2e champ de la ligne 2 du fichier de la room)\n"
+                  "'?' = niveau brut >= hauteur de la room (eau sur toute la room) ; 'fix' = corrigé via fixes.json\n\n")
+        for game, key, reg, h, raw, lvl, front in sorted(water_rows):
+            flag = ("fix " if raw != lvl else "") + ("?" if raw >= h else "")
+            out.write(f"{game}/{key:28s} {reg:4s} h={h:<4d} brut={raw:<4d} niveau={lvl:<4d} devant={int(front)} {flag}\n")
     summary = {"rooms": counts}
     for st in ("ECHEC", "A VERIFIER", "VERIFIE"):
         summary[st] = sum(1 for e in report.values() if e["status"] == st)
