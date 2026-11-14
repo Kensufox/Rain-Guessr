@@ -175,6 +175,9 @@ async function loadGeometry(regions) {
         }
     }
     console.log(`Geometry loaded: ${Object.keys(geometryByKey).length} rooms`);
+    const waterRooms = Object.values(geometryByKey).filter(g => g.water && g.water.level > 0).length;
+    console.log(`Water: ${waterRooms} room(s) avec de l'eau dans la géométrie`);
+    if (!waterRooms) console.warn("Aucune eau dans json/geometry : le champ 'water' est absent (relancer convert_rooms.py) ou le JSON vient du cache du navigateur (Ctrl+F5).");
 }
 
 // ---------------------------------------------------------------------------
