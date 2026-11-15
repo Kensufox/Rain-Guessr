@@ -8,6 +8,16 @@ const allSegments      = []; // all WebGL geometry buffers
 const storedConnections = []; // all connection data for redraw
 
 window.renderFilter = null;
+
+// Parallax : facteur d'échelle propre à la couche du tag (fourni par map_loader.js), appliqué autour du centre de
+// l'écran. Les couches de fond sont un peu plus petites, celles de devant un peu plus grandes → elles bougent à des
+// vitesses différentes quand on déplace la caméra.
+window.renderScale = null;
+function tagScale(tag) {
+    return (tag && window.renderScale) ? window.renderScale(tag) : 1;
+}
+let baseRenderScale = 1;
+
 function tagAlpha(tag) {
     if (!tag || !window.renderFilter) return 1;
     return window.renderFilter(tag);
@@ -116,6 +126,7 @@ function setRenderTransform(mapOffsetX, mapOffsetY, scale) {
     gl.uniform2f(uTranslate, mapOffsetX, mapOffsetY);
     gl.uniform1f(uScale,     scale);
     gl.uniform2f(uViewport,  canvas.width, canvas.height);
+    baseRenderScale = scale;
 }
 
 // segments : [{x1,y1,x2,y2}] en coordonnées carte (tuiles, y vers le haut)
@@ -208,8 +219,9 @@ function redraw() {
     // À opacité égale, les remplissages (eau) passent avant les lignes pour ne jamais les recouvrir
     visible.sort((a, b) => (a.k - b.k) || ((b.seg.fill ? 1 : 0) - (a.seg.fill ? 1 : 0)));
 
-    for (const { seg: { buf, count, color, fill, maskBuf, maskCount }, k } of visible) {
+    for (const { seg: { buf, count, color, fill, maskBuf, maskCount, tag }, k } of visible) {
         gl.uniform4f(uColor, color[0], color[1], color[2], color[3] * k);
+        gl.uniform1f(uScale, baseRenderScale * tagScale(tag));    // parallax (1 hors mode couches)
 
         if (maskBuf) {
             // 1) zones pleines de la room → stencil (INVERT = parité, rien n'est dessiné à l'écran)
@@ -233,13 +245,14 @@ function redraw() {
 
         if (maskBuf) gl.disable(gl.STENCIL_TEST);
     }
+    gl.uniform1f(uScale, baseRenderScale);
     redrawConnections();
     // Redraw persistent overlays (selection + located room) on top
     refreshOverlay();
 }
 
-function mapToCanvas(mx, my, targetCanvas) {
-    const s    = window.scale   || 1;
+function mapToCanvas(mx, my, targetCanvas, depthScale = 1) {
+    const s    = (window.scale  || 1) * depthScale;
     const panX = window.mapPanX || 0;
     const panY = window.mapPanY || 0;
     return {
@@ -363,8 +376,8 @@ function redrawConnections() {
         const k = Math.min(tagAlpha(c.tagA), tagAlpha(c.tagB));
         if (k <= 0) continue;
         ctx.globalAlpha = k;
-        const p1 = mapToCanvas(c.x1, c.y1, connCanvas);
-        const p2 = mapToCanvas(c.x2, c.y2, connCanvas);
+        const p1 = mapToCanvas(c.x1, c.y1, connCanvas, tagScale(c.tagA));   // chaque bout suit la couche de sa room
+        const p2 = mapToCanvas(c.x2, c.y2, connCanvas, tagScale(c.tagB));
         const dist   = Math.hypot(p2.px - p1.px, p2.py - p1.py);
         const cpDist = Math.max(20 * dpr, dist / 8);
         const d1 = DIR[c.dir1] || [0,0];

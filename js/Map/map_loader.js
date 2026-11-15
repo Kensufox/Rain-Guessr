@@ -27,12 +27,18 @@ const geometryByKey = {};  // "cc_b10" → géométrie (toutes régions confondu
 
 const LAYERS_URL       = "../map/World/Regions/Rooms/layers_vanilla.json";
 const LAYER_OTHER_ALPHA = 0.12;
+// Parallax (mode couches) : écart d'échelle entre deux couches voisines, autour du centre de l'écran.
+// 0 = désactivé. Réglable à chaud dans la console : setParallax(0.1)
+let PARALLAX_STRENGTH   = 0.15;
+const FOCUS_SPEED_MS    = 90;     // constante de temps de l'animation quand on change de couche (plus petit = plus vif)
 const LAYER_COUNT       = 3;      // couches 0, 1, 2 (une seule affichée à la fois ; les gates sont visibles partout)
 const DEFAULT_ROOM_W = 48, DEFAULT_ROOM_H = 35;
 
 let layerData   = null;
 let navType     = window.navMode;
 let activeLayer = 0;
+let layerFocus  = 0;              // couche "au point" (nombre décimal) : rejoint activeLayer en s'animant
+let focusAnimId = null;
 let navBusy     = false;
 let connectionFolders = [];
 const scenes    = {};
@@ -201,7 +207,9 @@ function pushRoomSegments(set, geo, ox, oy) {
     if (geo.water && geo.water.level > 0) {
         const level = Math.min(geo.water.level, geo.h);
         (geo.water.front ? set.waterFront : set.water).push({
-            x1: ox, y1: oy - geo.h, x2: ox + geo.w, y2: oy - geo.h + level
+            x1: ox, y1: oy - geo.h, x2: ox + geo.w, y2: oy - geo.h + level,
+            // zones pleines de la room (boucles de geo.solid, repère carte) : l'eau ne les recouvre pas
+            mask: (geo.solid || []).map(loop => loop.map(pt => [ox + pt[0], oy - pt[1]]))
         });
     }
 
@@ -328,7 +336,41 @@ function buildLayerScene() {
 // Visibilité par couche (appelé par render.js via window.renderFilter) → facteur d'opacité
 function layerFilter(tag) {
     if (navType !== "layer" || tag.layer == null) return 1;
-    return tag.layer === activeLayer ? 1 : LAYER_OTHER_ALPHA;
+    // Opacité selon la distance à la couche au point : fondu enchaîné pendant l'animation
+    return Math.max(LAYER_OTHER_ALPHA, 1 - Math.abs(tag.layer - layerFocus) * (1 - LAYER_OTHER_ALPHA));
+}
+
+// Échelle de profondeur d'une couche (parallax) : 1 pour la couche au point, <1 derrière, >1 devant.
+// Les gates (layer == null) et le mode plat ne sont pas touchés.
+function layerDepthScale(tag) {
+    if (navType !== "layer" || !tag || tag.layer == null || !PARALLAX_STRENGTH) return 1;
+    return Math.max(0.4, 1 + PARALLAX_STRENGTH * (layerFocus - tag.layer));
+}
+window.renderScale = layerDepthScale;
+
+function setParallax(strength) {
+    PARALLAX_STRENGTH = Math.max(0, +strength || 0);
+    redrawMap();
+}
+
+// Fait glisser layerFocus vers activeLayer (une image par requestAnimationFrame, redessin léger : pas de rebuild)
+function animateLayerFocus() {
+    if (focusAnimId !== null) return;
+    let last = performance.now();
+    const step = now => {
+        const dt = Math.min(now - last, 64);
+        last = now;
+        const diff = activeLayer - layerFocus;
+        if (Math.abs(diff) < 0.003) {
+            layerFocus = activeLayer;
+            focusAnimId = null;
+        } else {
+            layerFocus += diff * (1 - Math.exp(-dt / FOCUS_SPEED_MS));
+            focusAnimId = requestAnimationFrame(step);
+        }
+        redrawMap();
+    };
+    focusAnimId = requestAnimationFrame(step);
 }
 
 // Appelé par room_detection.js : seules les rooms de la couche affichée sont sélectionnables
@@ -384,6 +426,7 @@ async function setNavigationType(type, layer) {
     try {
         navType = type;
         if (isValidLayer(layer)) activeLayer = layer;
+        layerFocus = activeLayer;                    // pas d'animation quand on entre dans le mode
         window.navigationType = type;
         window.renderFilter = type === "layer" ? layerFilter : null;
         try { localStorage.setItem(window.NAV_STORAGE_KEY, type); } catch (e) { /* ignore */ }
@@ -406,7 +449,7 @@ function setActiveLayer(layer) {
     // La sélection n'est conservée que si sa room est toujours visible
     const b = window.selectedRoom && roomBoundaries[window.selectedRoom];
     if (b && !isRoomPickable(b)) clearSelection();
-    redrawMap();
+    animateLayerFocus();                       // glisse vers la nouvelle couche (redessine à chaque image)
     notifyNavChange();
 }
 
