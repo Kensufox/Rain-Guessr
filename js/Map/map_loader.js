@@ -27,6 +27,7 @@ const geometryByKey = {};  // "cc_b10" → géométrie (toutes régions confondu
 
 const LAYERS_URL       = "../map/World/Regions/Rooms/layers_vanilla.json";
 const LAYER_OTHER_ALPHA = 0.12;
+const LAYER_COUNT       = 3;      // couches 0, 1, 2 (une seule affichée à la fois ; les gates sont visibles partout)
 const DEFAULT_ROOM_W = 48, DEFAULT_ROOM_H = 35;
 
 let layerData   = null;
@@ -175,6 +176,9 @@ async function loadGeometry(regions) {
         }
     }
     console.log(`Geometry loaded: ${Object.keys(geometryByKey).length} rooms`);
+    const waterRooms = Object.values(geometryByKey).filter(g => g.water && g.water.level > 0).length;
+    console.log(`Water: ${waterRooms} room(s) avec de l'eau dans la géométrie`);
+    if (!waterRooms) console.warn("Aucune eau dans json/geometry : le champ 'water' est absent (relancer convert_rooms.py) ou le JSON vient du cache du navigateur (Ctrl+F5).");
 }
 
 // ---------------------------------------------------------------------------
@@ -197,9 +201,7 @@ function pushRoomSegments(set, geo, ox, oy) {
     if (geo.water && geo.water.level > 0) {
         const level = Math.min(geo.water.level, geo.h);
         (geo.water.front ? set.waterFront : set.water).push({
-            x1: ox, y1: oy - geo.h, x2: ox + geo.w, y2: oy - geo.h + level,
-            // zones pleines de la room (boucles de geo.solid, repère carte) : l'eau ne les recouvre pas
-            mask: (geo.solid || []).map(loop => loop.map(pt => [ox + pt[0], oy - pt[1]]))
+            x1: ox, y1: oy - geo.h, x2: ox + geo.w, y2: oy - geo.h + level
         });
     }
 
@@ -284,7 +286,7 @@ function buildFlatScene() {
 function buildLayerScene() {
     if (!layerData) return null;
     const scene = { boundaries: {}, batches: [] };
-    const sets = Array.from({ length: 3 }, makeLayerSet);
+    const sets = Array.from({ length: LAYER_COUNT }, makeLayerSet);
     const gateSet = makeLayerSet();
     let placed = 0, withGeo = 0;
 
@@ -325,13 +327,13 @@ function buildLayerScene() {
 
 // Visibilité par couche (appelé par render.js via window.renderFilter) → facteur d'opacité
 function layerFilter(tag) {
-    if (navType !== "layer" || tag.layer == null || activeLayer === "all") return 1;
+    if (navType !== "layer" || tag.layer == null) return 1;
     return tag.layer === activeLayer ? 1 : LAYER_OTHER_ALPHA;
 }
 
 // Appelé par room_detection.js : seules les rooms de la couche affichée sont sélectionnables
 function isRoomPickable(b) {
-    return navType !== "layer" || b.layer == null || activeLayer === "all" || b.layer === activeLayer;
+    return navType !== "layer" || b.layer == null || b.layer === activeLayer;
 }
 
 function getScene(type) {
@@ -363,11 +365,15 @@ function notifyNavChange() {
 }
 
 function getNavigationState() {
-    return { type: navType, layer: activeLayer, layerAvailable: !!layerData };
+    return { type: navType, layer: activeLayer, layerCount: LAYER_COUNT, layerAvailable: !!layerData };
+}
+
+function isValidLayer(layer) {
+    return Number.isInteger(layer) && layer >= 0 && layer < LAYER_COUNT;
 }
 
 /**
- * Change le mode de navigation : "flat" ou "layer" (layer facultatif : 0 | 1 | 2 | "all").
+ * Change le mode de navigation : "flat" ou "layer" (layer facultatif : 0 | 1 | 2).
  * Reconstruit géométrie + connexions (les positions changent), efface la sélection.
  */
 async function setNavigationType(type, layer) {
@@ -377,7 +383,7 @@ async function setNavigationType(type, layer) {
     navBusy = true;
     try {
         navType = type;
-        if (layer !== undefined) activeLayer = layer;
+        if (isValidLayer(layer)) activeLayer = layer;
         window.navigationType = type;
         window.renderFilter = type === "layer" ? layerFilter : null;
         try { localStorage.setItem(window.NAV_STORAGE_KEY, type); } catch (e) { /* ignore */ }
@@ -392,8 +398,9 @@ async function setNavigationType(type, layer) {
     }
 }
 
-// Couche affichée en mode "layer" : 0 | 1 | 2 | "all"
+// Couche affichée en mode "layer" : 0 | 1 | 2 (le mode "toutes les couches" n'existe plus)
 function setActiveLayer(layer) {
+    if (!isValidLayer(layer)) return;
     activeLayer = layer;
     if (navType !== "layer") return;
     // La sélection n'est conservée que si sa room est toujours visible
@@ -401,4 +408,10 @@ function setActiveLayer(layer) {
     if (b && !isRoomPickable(b)) clearSelection();
     redrawMap();
     notifyNavChange();
+}
+
+// Couche suivante (step = 1) ou précédente (step = -1), en boucle : 0 → 1 → 2 → 0
+function cycleLayer(step = 1) {
+    if (navType !== "layer") return;
+    setActiveLayer((activeLayer + step + LAYER_COUNT) % LAYER_COUNT);
 }

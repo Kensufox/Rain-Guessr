@@ -57,10 +57,9 @@
     <div id="loading-overlay">CHARGEMENT...</div>
 
     <div id="layer-buttons" style="position:fixed; top:8px; right:8px; z-index:20; display:none; gap:4px;">
-        <button type="button" data-layer="0">C0</button>
-        <button type="button" data-layer="1">C1</button>
-        <button type="button" data-layer="2">C2</button>
-        <button type="button" data-layer="all">TOUT</button>
+        <button type="button" data-layer="0" title="Couche 0 (touche 1)">C0</button>
+        <button type="button" data-layer="1" title="Couche 1 (touche 2)">C1</button>
+        <button type="button" data-layer="2" title="Couche 2 (touche 3)">C2</button>
     </div>
 
     <script>
@@ -77,23 +76,34 @@
 
         window.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll("#layer-buttons button").forEach(b => {
-                b.onclick = () => setActiveLayer(b.dataset.layer === "all" ? "all" : +b.dataset.layer);
+                b.onclick = () => setActiveLayer(+b.dataset.layer);
             });
         });
 
-        // Raccourcis : 1 / 2 / 3 = couche 0 / 1 / 2, 4 = toutes
+        // Raccourcis (mode couches) : 1 / 2 / 3 = couche 0 / 1 / 2 ; Espace = couche suivante, Maj+Espace = précédente
+        function layerKeysActive(e) {
+            if (typeof getNavigationState !== "function" || getNavigationState().type !== "layer") return false;
+            return !(e.target.matches && e.target.matches("input, textarea, select"));
+        }
         window.addEventListener("keydown", e => {
-            if (typeof getNavigationState !== "function" || getNavigationState().type !== "layer") return;
-            if (e.target.matches && e.target.matches("input, textarea")) return;
-            const map = { "1": 0, "2": 1, "3": 2, "4": "all" };
+            if (!layerKeysActive(e)) return;
+            if (e.code === "Space") {
+                e.preventDefault();                       // sinon Espace "clique" le bouton qui a le focus
+                if (!e.repeat) cycleLayer(e.shiftKey ? -1 : 1);
+                return;
+            }
+            const map = { "1": 0, "2": 1, "3": 2 };
             if (e.key in map) setActiveLayer(map[e.key]);
+        });
+        window.addEventListener("keyup", e => {           // le clic d'un bouton se déclenche au relâchement d'Espace
+            if (e.code === "Space" && layerKeysActive(e)) e.preventDefault();
         });
         
         window.gameActive = false;
         let mapReady = false;
         let timerInterval;
 
-        // La carte est prête : on lance directement une partie
+        // Map signals it's done loading
         window.addEventListener("mapLoaded", () => {
             mapReady = true;
             document.getElementById("loading-overlay").classList.add("hidden");
@@ -215,7 +225,10 @@
                 btn.style.color       = "#ff6666";
             }
             clearInterval(timerInterval);
+            document.getElementById("time-remaining").textContent = '00:00';
 
+            // 2) Ensuite l'affichage
+            console.log(`Points earned: ${result.points}`);
             locateRoom();
             const answer = window.locatedRoom ? window.locatedRoom.split("/")[1] : window.currentRoom;
             document.getElementById("answer-room-name").textContent = answer;

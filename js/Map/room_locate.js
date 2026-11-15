@@ -85,6 +85,12 @@
             window.scale = Math.min(Math.max(0.05, fit), 6);
         }
 
+        // Mode couches : une seule couche est affichée, on bascule sur celle de la room recherchée
+        if (b.layer != null && typeof getNavigationState === "function" && typeof setActiveLayer === "function") {
+            const nav = getNavigationState();
+            if (nav.type === "layer" && nav.layer !== b.layer) setActiveLayer(b.layer);
+        }
+
         window.locatedRoom = key;
         if (typeof applyTransform === "function") applyTransform(); // redessine aussi l'overlay
 
