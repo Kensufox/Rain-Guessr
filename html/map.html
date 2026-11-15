@@ -6,11 +6,6 @@
     <meta name="description" content="Rain Guessr">
     <title>Rain Guessr</title>
     <link id="stylesheet" rel="stylesheet" href='../css/map.css'>
-
-    <!-- Load order matters: render first basic, 
-         then (defines gl, canvas, renderRoom),
-         then map_loader (fetches data, calls renderRoom),
-         then room_detection (reads canvas + roomBoundaries) -->
     <script src="../js/style.js"                   defer></script>
     <script src="../js/Map/render.js"              defer></script>
     <script src="../js/Map/map_loader.js"          defer></script>
@@ -41,17 +36,19 @@
             <span id="selection-label">SELECTED ROOM :</span>
             <span id="selected-room-name">—</span>
         </div>
-        <div id="selection-row">
+        <div id="answer-row">
             <span id="answer-label">CORRECT ROOM :</span>
             <span id="answer-room-name">—</span>
         </div>
         <p id="timer">Time left: <span id="time-remaining">00:00</span></p>
-        <!--<button id="btn-mode" onclick="toggleDifficulty()" title="Normal : extraits visibles. Difficile : extraits totalement aléatoires (peuvent être noirs)">MODE : NORMAL</button>
-    --><button id="btn-validate" disabled onclick="onValidate()">GUESS</button>
+        <div id="result-block">
+            <p class="result-row"><span>CORRECT REGION :</span> <span id="result-region">—</span></p>
+            <p class="result-row"><span id="result-time-label">TEMPS MIS :</span> <span id="result-time">—</span></p>
+            <p class="result-row"><span>POINTS SCORED :</span> <span id="result-points">—</span></p>
+        </div>
+        <button id="btn-validate" disabled onclick="onValidate()">GUESS</button>
+        <button id="btn-new-game" onclick="startGameUI()">NEW GAME</button>
     </div>
-
-    <!-- Toggle button — always visible -->
-    <button id="btn-toggle-game" onclick="toggleGame()">▶ JOUER</button>
 
     <!-- Hover tooltip -->
     <div id="room-tooltip"></div>
@@ -96,55 +93,45 @@
         let mapReady = false;
         let timerInterval;
 
-        // Map signals it's done loading
+        // La carte est prête : on lance directement une partie
         window.addEventListener("mapLoaded", () => {
             mapReady = true;
             document.getElementById("loading-overlay").classList.add("hidden");
+            startGameUI();
         });
 
-        async function toggleGame() {
-            const btn   = document.getElementById("btn-toggle-game");
-            const panel = document.getElementById("game-panel");
+        // Démarre une nouvelle partie (utilisé au chargement et par NEW GAME)
+        async function startGameUI() {
+            if (!mapReady) return;
+
             clearLocate();
+            document.getElementById("answer-room-name").textContent = "—";
+            document.getElementById("answer-row").classList.remove("visible");
+            document.getElementById("btn-new-game").classList.remove("visible");
 
-            if (window.gameActive) {
-                // Deactivate
-                window.gameActive = false;
-                panel.classList.remove("visible");
-                btn.classList.remove("active");
-                btn.textContent = "▶ JOUER";
+            window.gameActive = true;
+            document.getElementById("game-panel").classList.add("visible");
 
-                // Clear any selection left on the map
-                if (typeof clearSelection === "function") clearSelection();
-                document.getElementById("selected-room-name").textContent = "—";
-            } else {
-                // Activate — start a new round
-                if (!mapReady) return; // map not loaded yet, ignore
-                window.gameActive = true;
-                panel.classList.add("visible");
-                btn.classList.add("active");
-                btn.textContent = "■ STOP";
-
-                await newRound();
-            }
+            await newRound();
         }
 
+        let timeLeft = 0;
+        let timedOut = false;
+
         function startTimer() {
-            let timeRemaining = window.guessTime;
-            updateTimerDisplay(timeRemaining);
+            timeLeft = window.guessTime;
+            updateTimerDisplay(timeLeft);
 
             clearInterval(timerInterval);
 
             timerInterval = setInterval(() => {
-                timeRemaining--;
+                timeLeft--;
+                updateTimerDisplay(timeLeft);
 
-                updateTimerDisplay(timeRemaining);
-
-                if (timeRemaining <= 0) {
+                if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    onValidate(); // Auto-validate when time runs out
+                    onTimeout();
                 }
-
             }, 1000);
         }
 
@@ -162,6 +149,10 @@
             const img       = document.getElementById("challenge-image");
             const validateBtn = document.getElementById("btn-validate");
             const selName   = document.getElementById("selected-room-name");
+            timedOut = false;
+            document.getElementById("timer").style.display = "";
+            document.getElementById("answer-row").classList.remove("visible");
+            document.getElementById("result-block").classList.remove("visible");
 
             img.classList.add("loading");
             img.src = "";
@@ -191,13 +182,13 @@
             const btn = document.getElementById("btn-validate");
             if (correct) {
                 btn.textContent = "✓ CORRECT !";
-                btn.style.borderColor = "#00ff00";
-                btn.style.color       = "#00ff00";
+                btn.style.borderColor = "#aaffaa";
+                btn.style.color       = "#aaffaa";
                 result = checkResult();
             } else {
                 btn.textContent = "✗ INCORRECT";
-                btn.style.borderColor = "#ff4444";
-                btn.style.color       = "#ff4444";
+                btn.style.borderColor = "#ff6666";
+                btn.style.color       = "#ff6666";
                 if (window.guess_amount <= 0) {
                     result = checkResult();
                 }
@@ -208,19 +199,61 @@
             const result = submitGuess(window.selectedRoom);
             if (!result) return null;
 
-            // 1) D'abord l'état de fin de manche, pour qu'une erreur plus bas ne laisse pas le jeu ouvert
+            console.log(`Points earned: ${result.points}`);
+            finishRound(result);
+            return result;
+        }
+
+        // Fin de manche : bloque le jeu, révèle la réponse, affiche le récapitulatif et NEW GAME
+        function finishRound(result = null) {
             window.gameActive = false;
             document.getElementById("btn-validate").disabled = true;
+            if (timedOut) {
+                const btn = document.getElementById("btn-validate");
+                btn.textContent = "TIME OUT";
+                btn.style.borderColor = "#ff6666";
+                btn.style.color       = "#ff6666";
+            }
             clearInterval(timerInterval);
-            document.getElementById("time-remaining").textContent = '00:00';
 
-            // 2) Ensuite l'affichage
-            console.log(`Points earned: ${result.points}`);
             locateRoom();
             const answer = window.locatedRoom ? window.locatedRoom.split("/")[1] : window.currentRoom;
             document.getElementById("answer-room-name").textContent = answer;
+            document.getElementById("answer-row").classList.add("visible");
 
-            return result;
+            // Récapitulatif (remplace "Time left")
+            const taken = Math.max(0, window.guessTime - timeLeft);
+            const mm = String(Math.floor(taken / 60)).padStart(2, "0");
+            const ss = String(taken % 60).padStart(2, "0");
+
+            const regionEl = document.getElementById("result-region");
+            const sameRegion = !!(result && result.sameRegion);
+            regionEl.textContent = sameRegion ? "YES" : "NO";
+            regionEl.style.color = sameRegion ? "#aaffaa" : "#ff6666";
+
+            const timeEl = document.getElementById("result-time");
+            if (timedOut) {
+                document.getElementById("result-time-label").textContent = "";
+                timeEl.textContent = "TIME OUT";
+                timeEl.style.color = "#ff6666";
+            } else {
+                document.getElementById("result-time-label").textContent = "TIME TAKEN :";
+                timeEl.textContent = `${mm}:${ss}`;
+                timeEl.style.color = "";
+            }
+
+            document.getElementById("result-points").textContent = result ? result.points : 0;
+
+            document.getElementById("timer").style.display = "none";
+            document.getElementById("result-block").classList.add("visible");
+            document.getElementById("btn-new-game").classList.add("visible");
+        }
+
+        function onTimeout() {
+            if (!window.gameActive) return;
+            timedOut = true;
+            // Une room est sélectionnée : on la soumet. Sinon (ou si ça échoue) on termine simplement la manche.
+            if (!(window.selectedRoom && checkResult())) finishRound();
         }
     </script>
 </body>

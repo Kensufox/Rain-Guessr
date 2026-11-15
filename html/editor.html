@@ -522,11 +522,6 @@ async function loadFromFiles(fileList) {
 }
 
 function ingestAll(jsons, edits) {
-  // Diagnostic : l'eau vient du champ "water" des JSON de géométrie (convert_rooms.py)
-  const waterRooms = Object.values(jsons).reduce((n, j) =>
-    n + Object.values(j.__rooms || {}).filter(r => r && r.water && r.water.level > 0).length, 0);
-  console.log(`Water: ${waterRooms} room(s) avec de l'eau dans la géométrie chargée`);
-  if (!waterRooms) console.warn("Aucune eau dans les JSON chargés : champ 'water' absent (relancer convert_rooms.py), mauvais dossier choisi dans « Open folder… », ou cache du navigateur (Ctrl+F5).");
   regionPos = {}; regionOffset = {}; roomOffset = {}; roomOffsetInitial = {};
   regionRooms = {}; regionBounds = {}; allRoomData = {}; regionInitial = {};
   selectedRegion = null; selectedRoom = null; step2Region = null;
@@ -591,16 +586,9 @@ function ingestAll(jsons, edits) {
 }
 
 // convert_rooms.py : 1 tuile = 20 px de room, y vers le bas dans le JSON -> converti en Y vers le haut
-// Le dossier json/geometry contient TOUTES les rooms converties (751 en vanilla), y compris celles qui ne sont pas sur
-// la carte du jeu (contenu coupé, rooms de test, doublons comme gate_sl_gw...). Seules celles de map-data.json (ou
-// positionnées à la main dans edits.json) sont affichées. Ajouter ?all=1 à l'URL pour tout voir, en grille.
-const SHOW_UNPLACED = new URLSearchParams(location.search).has('all');
-
 function parseRooms(key, obj, pos) {
   const T = 20, rooms = []; let cx = 0, cy = 0, rowH = 0;
-  const hasPositions = !!pos && Object.keys(pos).length > 0;   // sans map-data.json : on ne peut pas filtrer
   Object.keys(obj).sort().forEach(name => {
-    if (hasPositions && !pos[name] && !SHOW_UNPLACED) return;   // pas sur la carte
     const d = obj[name], W = d.w * T, H = d.h * T;
     let ox, oy;
     if (pos && pos[name]) { ox = pos[name][0]; oy = pos[name][1]; }
@@ -793,20 +781,26 @@ function drawStep2() {
     const dx = rpos[0] + roff[0] + o[0];
     const dy = rpos[1] + roff[1] + o[1];
 
-    // Eau : rectangle bleu depuis le bas de la room, puis les solides le recouvrent
-    // (remplissage evenodd) -> l'eau reste dans la géométrie (formes, pentes).
+    // Eau : rectangle bleu depuis le bas de la room, découpé (clip pair/impair) par les zones pleines de la géométrie.
+    // Le clip ne peint rien : la partie hors géométrie reste transparente (on voit ce qui est dessous : grille,
+    // autres rooms...), et l'eau n'apparaît que dans la partie jouable (formes, pentes).
     if (room.water && room.water.level > 0) {
       const a = mToS(room.minX + dx, room.minY + dy + room.water.level * 20);
       const b = mToS(room.maxX + dx, room.minY + dy);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(a.sx, a.sy, b.sx - a.sx, b.sy - a.sy);          // 1er clip : la zone de l'eau
+      ctx.clip();
+      ctx.beginPath();
+      ctx.rect(-1e6, -1e6, 2e6, 2e6);                           // 2e clip : tout SAUF les zones pleines (evenodd).
+      room.solid.forEach(loop => {                              // Deux clips (et non un seul) : évite un filet bleu
+        loop.forEach((pt, i) => { const sp = mToS(dx + pt[0], dy + pt[1]); if (i) ctx.lineTo(sp.sx, sp.sy); else ctx.moveTo(sp.sx, sp.sy); });
+        ctx.closePath();                                        // à la surface, dû à l'antialiasing du bord du rectangle
+      });
+      ctx.clip('evenodd');
       ctx.fillStyle = room.water.front ? 'rgba(40,70,230,0.8)' : 'rgba(20,40,170,0.95)';
       ctx.fillRect(a.sx, a.sy, b.sx - a.sx, b.sy - a.sy);
-      ctx.beginPath();
-      room.solid.forEach(loop => {
-        loop.forEach((pt, i) => { const sp = mToS(dx + pt[0], dy + pt[1]); if (i) ctx.lineTo(sp.sx, sp.sy); else ctx.moveTo(sp.sx, sp.sy); });
-        ctx.closePath();
-      });
-      ctx.fillStyle = '#0a0c0f';   // = --bg
-      ctx.fill('evenodd');
+      ctx.restore();
     }
 
     // Geometry strokes (already Y-up map space, no flip needed)

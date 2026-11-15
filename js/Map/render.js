@@ -22,7 +22,7 @@ window.addEventListener("DOMContentLoaded", () => {
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
-    gl = canvas.getContext("webgl");
+    gl = canvas.getContext("webgl", { stencil: true });   // stencil : sert à découper l'eau selon la géométrie
     if (!gl) { console.error("Cannot initialise WebGL"); return; }
 
     gl.enable(gl.BLEND);
@@ -121,9 +121,45 @@ function setRenderTransform(mapOffsetX, mapOffsetY, scale) {
 // segments : [{x1,y1,x2,y2}] en coordonnées carte (tuiles, y vers le haut)
 // color    : [r,g,b,a] (0..1) — rouge par défaut comme avant
 // tag      : null ou { layer } — sert uniquement au filtre de visibilité (navigation par couches)
-// fill     : true → chaque élément est un rectangle { x1, y1, x2, y2 } dessiné plein (2 triangles), ex. l'eau
+// fill     : true → chaque élément est un rectangle { x1, y1, x2, y2 } dessiné plein (2 triangles), ex. l'eau.
+//            Si l'élément a un `mask` (liste de boucles [[x, y], ...] = zones PLEINES de la room), le rectangle n'est
+//            dessiné que là où le masque ne couvre pas (règle pair/impair, comme le fill 'evenodd' d'un canvas 2D) :
+//            l'eau reste dans la partie jouable et le reste est transparent.
+function uploadBuffer(floats) {
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, floats, gl.STATIC_DRAW);
+    return buf;
+}
+
+// Boucles → triangles en éventail (p0, pi, pi+1) : dessinés avec stencil INVERT, la parité donne l'intérieur
+function maskTriangles(loops) {
+    const out = [];
+    for (const loop of loops) {
+        for (let i = 1; i < loop.length - 1; i++) {
+            out.push(loop[0][0], loop[0][1], loop[i][0], loop[i][1], loop[i + 1][0], loop[i + 1][1]);
+        }
+    }
+    return new Float32Array(out);
+}
+
 function renderRoom(segments, color = [1, 0, 0, 1], tag = null, fill = false) {
     if (!shaderProgram) { console.error("renderRoom called before initRender"); return; }
+
+    if (fill) {
+        const plain = segments.filter(r => !(r.mask && r.mask.length));
+        for (const r of segments) {
+            if (!(r.mask && r.mask.length)) continue;
+            const maskVerts = maskTriangles(r.mask);
+            allSegments.push({
+                buf: uploadBuffer(new Float32Array([r.x1, r.y1, r.x2, r.y1, r.x2, r.y2, r.x1, r.y1, r.x2, r.y2, r.x1, r.y2])),
+                count: 6, color, tag, fill: true,
+                maskBuf: uploadBuffer(maskVerts), maskCount: maskVerts.length / 2
+            });
+        }
+        segments = plain;
+        if (!segments.length) return;
+    }
 
     let flatVertices;
     if (fill) {
@@ -154,7 +190,7 @@ function renderRoom(segments, color = [1, 0, 0, 1], tag = null, fill = false) {
 
 // Vide la géométrie et les connexions (changement de mode de navigation)
 function clearRenderData() {
-    if (gl) for (const { buf } of allSegments) gl.deleteBuffer(buf);
+    if (gl) for (const { buf, maskBuf } of allSegments) { gl.deleteBuffer(buf); if (maskBuf) gl.deleteBuffer(maskBuf); }
     allSegments.length = 0;
     storedConnections.length = 0;
 }
@@ -172,11 +208,30 @@ function redraw() {
     // À opacité égale, les remplissages (eau) passent avant les lignes pour ne jamais les recouvrir
     visible.sort((a, b) => (a.k - b.k) || ((b.seg.fill ? 1 : 0) - (a.seg.fill ? 1 : 0)));
 
-    for (const { seg: { buf, count, color, fill }, k } of visible) {
+    for (const { seg: { buf, count, color, fill, maskBuf, maskCount }, k } of visible) {
         gl.uniform4f(uColor, color[0], color[1], color[2], color[3] * k);
+
+        if (maskBuf) {
+            // 1) zones pleines de la room → stencil (INVERT = parité, rien n'est dessiné à l'écran)
+            gl.enable(gl.STENCIL_TEST);
+            gl.clear(gl.STENCIL_BUFFER_BIT);
+            gl.colorMask(false, false, false, false);
+            gl.stencilFunc(gl.ALWAYS, 0, 0xFF);
+            gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
+            gl.bindBuffer(gl.ARRAY_BUFFER, maskBuf);
+            gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 0, 0);
+            gl.drawArrays(gl.TRIANGLES, 0, maskCount);
+            // 2) l'eau, seulement où le stencil vaut 0 (hors zones pleines) ; le reste reste transparent
+            gl.colorMask(true, true, true, true);
+            gl.stencilFunc(gl.EQUAL, 0, 0xFF);
+            gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+        }
+
         gl.bindBuffer(gl.ARRAY_BUFFER, buf);
         gl.vertexAttribPointer(positionAttribute, 2, gl.FLOAT, false, 0, 0);
         gl.drawArrays(fill ? gl.TRIANGLES : gl.LINES, 0, count);
+
+        if (maskBuf) gl.disable(gl.STENCIL_TEST);
     }
     redrawConnections();
     // Redraw persistent overlays (selection + located room) on top

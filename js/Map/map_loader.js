@@ -175,9 +175,6 @@ async function loadGeometry(regions) {
         }
     }
     console.log(`Geometry loaded: ${Object.keys(geometryByKey).length} rooms`);
-    const waterRooms = Object.values(geometryByKey).filter(g => g.water && g.water.level > 0).length;
-    console.log(`Water: ${waterRooms} room(s) avec de l'eau dans la géométrie`);
-    if (!waterRooms) console.warn("Aucune eau dans json/geometry : le champ 'water' est absent (relancer convert_rooms.py) ou le JSON vient du cache du navigateur (Ctrl+F5).");
 }
 
 // ---------------------------------------------------------------------------
@@ -200,7 +197,9 @@ function pushRoomSegments(set, geo, ox, oy) {
     if (geo.water && geo.water.level > 0) {
         const level = Math.min(geo.water.level, geo.h);
         (geo.water.front ? set.waterFront : set.water).push({
-            x1: ox, y1: oy - geo.h, x2: ox + geo.w, y2: oy - geo.h + level
+            x1: ox, y1: oy - geo.h, x2: ox + geo.w, y2: oy - geo.h + level,
+            // zones pleines de la room (boucles de geo.solid, repère carte) : l'eau ne les recouvre pas
+            mask: (geo.solid || []).map(loop => loop.map(pt => [ox + pt[0], oy - pt[1]]))
         });
     }
 

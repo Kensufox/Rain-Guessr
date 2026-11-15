@@ -34,17 +34,6 @@ html, body {
 
 #canvas-overlay { z-index: 2; }
 
-#btn-toggle-game {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 101;
-    pointer-events: all;
-    cursor: pointer;
-    font-size: 11px;
-    color : white;
-}
-
 #room-tooltip {
     display: none;
     position: fixed;
@@ -96,21 +85,48 @@ html, body {
     opacity: 0.3;
 }
 
-#selection-row {
-    display: flex;
+#selection-row, #answer-row {
     align-items: center;
     gap: 10px;
     width: 100%;
 }
 
-#selection-label #answer-label {
+#selection-row { display: flex; }
+
+#answer-row { display: none; }
+#answer-row.visible { display: flex; }
+
+#selection-label, #answer-label {
     color: rgba(255,255,255,0.4);
     font-size: 11px;
     letter-spacing: 1px;
     white-space: nowrap;
 }
 
-#selected-room-name #answer-room-name {
+#result-block {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    font-size: 13px;
+}
+
+#result-block.visible { display: flex; }
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0;
+}
+
+.result-row span:first-child {
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+#selected-room-name, #answer-room-name {
     flex: 1;
     font-size: 13px;
     white-space: nowrap;
@@ -118,7 +134,7 @@ html, body {
     text-overflow: ellipsis;
 }
 
-#btn-validate {
+#btn-validate, #btn-new-game {
     pointer-events: all;
     cursor: pointer;
     padding: 7px 20px;
@@ -128,8 +144,11 @@ html, body {
     letter-spacing: 2px;
     border-radius: 4px;
     width: 100%;
-    color : white;
+    color: white;
 }
+
+#btn-new-game { display: none; }
+#btn-new-game.visible { display: flex; }
 
 #btn-mode {
     pointer-events: all;
